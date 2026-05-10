@@ -3913,9 +3913,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 showReadyTimerText();
                 setTimerColor(0xff00ff00);
                 canStart = true;
-                if (enterTime == 0 && timer.getTimerState() == DCTTimer.READY) {
-                    setReadyHoldUi(true);
-                }
             } else {
                 setReadyHoldUi(false);
                 if (timer.getTimerState()==0) {
