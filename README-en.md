@@ -1,12 +1,12 @@
 <h4 align="right">English | <strong><a href="README.md">简体中文</a></strong></h4>
 
 <div align="center">
-  <img src=".github/assets/dctimer-logo.png" alt="DCTimer-Android-BLE logo" width="128" height="128" />
+  <img src=".github/assets/dctimer-logo.png" alt="DCTimer-BLE logo" width="128" height="128" />
 
-  <h1>DCTimer-Android-BLE</h1>
+  <h1>DCTimer-BLE</h1>
 
   <p>
-    An Android Bluetooth hardware timer based on DCTimer-Android, focused on smart cubes and QiYi Smart Timer support.
+    A speedcubing timer based on DCTimer-Android, with support for smart cubes and the QiYi Smart Timer
   </p>
 
   <p>
@@ -29,7 +29,10 @@ Supported devices:
 Key changes:
 - Upgraded to `AndroidX / AGP 8.9.2 / Gradle 8.11.1 / targetSdk 35`
 - Database import/export, scramble import/export, and background image selection have been migrated to the system document picker
-- Bluetooth hardware entry points have been split into `Smart Cube` / `Bluetooth Timer`
+- The solve entry now supports separate `Smart Cube` / `Bluetooth Timer` modes
+- Added 8s/12s voice reminders for WCA inspection mode
+- Manual time entry now auto-splits the time, so no extra decimal point is needed
+- PB history markers and sorting in the solve list
 
 ## Acknowledgements
 
@@ -37,9 +40,9 @@ Key changes:
 - [cstimer](https://github.com/cs0x7f/cstimer): smart cube protocol reference
 - [qiyi_smartcube_protocol](https://codeberg.org/Flying-Toast/qiyi_smartcube_protocol): QiYi smart protocol reference
 - [CubicTimer](https://github.com/hato-ya/CubicTimer): QiYi Smart Timer integration reference
-- [Soda](https://space.bilibili.com/400839068): provided QiYi smart cube test hardware and key ideas, including multi-brand compatibility and room battles
+- [Soda](https://space.bilibili.com/400839068): provided the QiYi smart cube test hardware
 - [Visionary](https://space.bilibili.com/674586122): helped test GAN smart cube support
-- [codex](https://github.com/codex): development partner
+- [Codex](https://github.com/codex): development partner
 
 ## License
 

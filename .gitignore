@@ -41,3 +41,4 @@ rel.bat
 design/
 
 other/
+.playwright-mcp/
