@@ -182,8 +182,6 @@ public class SmartCube implements Serializable {
                 }
             } else moveList.add(move);
         }
-        if (type == BLEDevice.TYPE_GANI_CUBE)
-            result = (int) (result / 0.95);
         reconstruction = SmartCubeSolveReconstruction.fromRawMoves(solveStartState, solveMoves);
         reconstructedMoves = reconstruction.getMoveCount();
     }
