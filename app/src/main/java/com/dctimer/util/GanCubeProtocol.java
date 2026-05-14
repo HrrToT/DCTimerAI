@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -70,8 +71,10 @@ public class GanCubeProtocol implements SmartCubeProtocol {
     private int prevMoveCnt = -1;
     private int currentMoveCnt = -1;
     private long lastEmittedDeviceTs = -1L;
+    private long lastEmittedLocTime = -1L;
     private long prevMoveLocTime = -1L;
     private int batteryLevel;
+    private final ArrayDeque<Long> historyEstimateLocQueue = new ArrayDeque<>();
 
     private enum Variant {
         V2, V3, V4
@@ -81,11 +84,17 @@ public class GanCubeProtocol implements SmartCubeProtocol {
         final int moveCnt;
         final int move;
         Long deviceTs;
+        final long receiveLocTime;
 
         MoveEvent(int moveCnt, int move, Long deviceTs) {
+            this(moveCnt, move, deviceTs, -1L);
+        }
+
+        MoveEvent(int moveCnt, int move, Long deviceTs, long receiveLocTime) {
             this.moveCnt = moveCnt;
             this.move = move;
             this.deviceTs = deviceTs;
+            this.receiveLocTime = receiveLocTime;
         }
     }
 
@@ -133,6 +142,7 @@ public class GanCubeProtocol implements SmartCubeProtocol {
         if (!initCipher()) {
             return false;
         }
+        requestHighConnectionPriority();
         if (!bindCharacteristics(service)) {
             return false;
         }
@@ -157,6 +167,7 @@ public class GanCubeProtocol implements SmartCubeProtocol {
     public void clear() {
         requestQueue.clear();
         moveBuffer.clear();
+        historyEstimateLocQueue.clear();
         gatt = null;
         readCharacteristic = null;
         writeCharacteristic = null;
@@ -169,6 +180,7 @@ public class GanCubeProtocol implements SmartCubeProtocol {
         prevMoveCnt = -1;
         currentMoveCnt = -1;
         lastEmittedDeviceTs = -1L;
+        lastEmittedLocTime = -1L;
         prevMoveLocTime = -1L;
         batteryLevel = 0;
     }
@@ -259,6 +271,13 @@ public class GanCubeProtocol implements SmartCubeProtocol {
                 break;
         }
         return readCharacteristic != null && writeCharacteristic != null;
+    }
+
+    private void requestHighConnectionPriority() {
+        if (gatt == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return;
+        }
+        gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
     }
 
     private void onNotificationsEnabled() {
@@ -481,28 +500,35 @@ public class GanCubeProtocol implements SmartCubeProtocol {
         if (axis < 0) {
             return;
         }
-        moveBuffer.offer(new MoveEvent(moveCnt, convertQuarterMove(axis, pow), ts));
+        int move = convertQuarterMove(axis, pow);
+        moveBuffer.offer(new MoveEvent(moveCnt, move, ts, locTime));
         evictMoveBuffer(true);
     }
 
     private void handleV4Move(String bits, long locTime) {
-        int moveCnt = parseBits(bits, 56, 8) << 8 | parseBits(bits, 48, 8);
-        moveCnt &= 0xff;
-        currentMoveCnt = moveCnt;
-        prevMoveLocTime = locTime;
-        if (moveCnt == prevMoveCnt || prevMoveCnt == -1) {
-            return;
+        for (int offset = 0; offset + 72 <= bits.length(); offset += 72) {
+            if (parseBits(bits, offset, 8) != 0x01) {
+                break;
+            }
+            int moveCnt = parseBits(bits, offset + 56, 8) << 8 | parseBits(bits, offset + 48, 8);
+            moveCnt &= 0xff;
+            currentMoveCnt = moveCnt;
+            prevMoveLocTime = locTime;
+            if (moveCnt == prevMoveCnt || prevMoveCnt == -1) {
+                continue;
+            }
+            long ts = parseBits(bits, offset + 40, 8);
+            ts = (ts << 8) | parseBits(bits, offset + 32, 8);
+            ts = (ts << 8) | parseBits(bits, offset + 24, 8);
+            ts = (ts << 8) | parseBits(bits, offset + 16, 8);
+            int pow = parseBits(bits, offset + 64, 2);
+            int axis = decodeAxisMask(parseBits(bits, offset + 66, 6));
+            if (axis < 0) {
+                break;
+            }
+            int move = convertQuarterMove(axis, pow);
+            moveBuffer.offer(new MoveEvent(moveCnt, move, ts, locTime));
         }
-        long ts = parseBits(bits, 40, 8);
-        ts = (ts << 8) | parseBits(bits, 32, 8);
-        ts = (ts << 8) | parseBits(bits, 24, 8);
-        ts = (ts << 8) | parseBits(bits, 16, 8);
-        int pow = parseBits(bits, 64, 2);
-        int axis = decodeAxisMask(parseBits(bits, 66, 6));
-        if (axis < 0) {
-            return;
-        }
-        moveBuffer.offer(new MoveEvent(moveCnt, convertQuarterMove(axis, pow), ts));
         evictMoveBuffer(true);
     }
 
@@ -519,7 +545,7 @@ public class GanCubeProtocol implements SmartCubeProtocol {
                         + " diff=" + diff
                         + " wait=" + (locTime - prevMoveLocTime)
                         + "ms");
-                requestMoveHistory(startMoveCnt, diff + 1);
+                requestMoveHistory(startMoveCnt, diff + 1, locTime);
             }
             return;
         }
@@ -550,7 +576,7 @@ public class GanCubeProtocol implements SmartCubeProtocol {
                         + " diff=" + diff
                         + " wait=" + (locTime - prevMoveLocTime)
                         + "ms");
-                requestMoveHistory(startMoveCnt, diff + 1);
+                requestMoveHistory(startMoveCnt, diff + 1, locTime);
             }
             return;
         }
@@ -572,7 +598,7 @@ public class GanCubeProtocol implements SmartCubeProtocol {
         int startMoveCnt = parseBits(bits, 24, 8);
         int numberOfMoves = (len - 1) * 2;
         Log.w(TAG, "GAN v3 history event start=" + startMoveCnt + " count=" + numberOfMoves);
-        injectHistoryMoves(bits, 32, startMoveCnt, numberOfMoves, false);
+        injectHistoryMoves(bits, 32, startMoveCnt, numberOfMoves, false, pollHistoryEstimateLocTime());
         evictMoveBuffer(false);
     }
 
@@ -580,11 +606,15 @@ public class GanCubeProtocol implements SmartCubeProtocol {
         int startMoveCnt = parseBits(bits, 16, 8);
         int numberOfMoves = (len - 1) * 2;
         Log.w(TAG, "GAN v4 history event start=" + startMoveCnt + " count=" + numberOfMoves);
-        injectHistoryMoves(bits, 24, startMoveCnt, numberOfMoves, true);
+        injectHistoryMoves(bits, 24, startMoveCnt, numberOfMoves, true, pollHistoryEstimateLocTime());
         evictMoveBuffer(false);
     }
 
-    private void injectHistoryMoves(String bits, int offset, int startMoveCnt, int numberOfMoves, boolean v4) {
+    private long pollHistoryEstimateLocTime() {
+        return historyEstimateLocQueue.isEmpty() ? -1L : historyEstimateLocQueue.poll();
+    }
+
+    private void injectHistoryMoves(String bits, int offset, int startMoveCnt, int numberOfMoves, boolean v4, long estimateLocTime) {
         for (int i = 0; i < numberOfMoves; i++) {
             int axis = parseBits(bits, offset + i * 4, 3);
             int pow = parseBits(bits, offset + i * 4 + 3, 1);
@@ -593,7 +623,7 @@ public class GanCubeProtocol implements SmartCubeProtocol {
             }
             int move = convertHistoryMove(axis, pow);
             int moveCnt = (startMoveCnt - i) & 0xff;
-            injectLostMove(new MoveEvent(moveCnt, move, null));
+            injectLostMove(new MoveEvent(moveCnt, move, null, estimateLocTime));
         }
     }
 
@@ -642,11 +672,18 @@ public class GanCubeProtocol implements SmartCubeProtocol {
             moveBuffer.pollFirst();
             int delta = computeDelta(head.deviceTs);
             emitMove(head.move, delta);
+            if (head.receiveLocTime > 0) {
+                lastEmittedLocTime = head.receiveLocTime;
+            }
             prevMoveCnt = head.moveCnt;
         }
     }
 
     private void requestMoveHistory(int startMoveCnt, int numberOfMoves) {
+        requestMoveHistory(startMoveCnt, numberOfMoves, -1L);
+    }
+
+    private void requestMoveHistory(int startMoveCnt, int numberOfMoves, long estimateLocTime) {
         if (variant != Variant.V3 && variant != Variant.V4) {
             return;
         }
@@ -660,6 +697,7 @@ public class GanCubeProtocol implements SmartCubeProtocol {
             numberOfMoves++;
         }
         numberOfMoves = Math.min(numberOfMoves, startMoveCnt + 1);
+        historyEstimateLocQueue.offer(estimateLocTime);
         enqueueRequest(variant == Variant.V3
                 ? v3RequestMoveHistory(startMoveCnt, numberOfMoves)
                 : v4RequestMoveHistory(startMoveCnt, numberOfMoves));
@@ -689,9 +727,7 @@ public class GanCubeProtocol implements SmartCubeProtocol {
                     list.get(start + j).deviceTs = previous + span * (j + 1) / (missingCount + 1);
                 }
             } else if (previous != null) {
-                for (int j = 0; j < missingCount; j++) {
-                    list.get(start + j).deviceTs = previous + j + 1L;
-                }
+                interpolateTrailingMissingTimes(list, start, missingCount, previous);
             } else if (next != null) {
                 for (int j = missingCount - 1; j >= 0; j--) {
                     list.get(start + j).deviceTs = Math.max(0L, next - (missingCount - j));
@@ -701,6 +737,33 @@ public class GanCubeProtocol implements SmartCubeProtocol {
                 previous = list.get(i).deviceTs;
             }
         }
+    }
+
+    private void interpolateTrailingMissingTimes(List<MoveEvent> list, int start, int missingCount, long previous) {
+        long estimatedEnd = estimateTrailingDeviceTs(list, start, missingCount, previous);
+        if (estimatedEnd > previous) {
+            long span = estimatedEnd - previous;
+            for (int j = 0; j < missingCount; j++) {
+                list.get(start + j).deviceTs = previous + Math.max(1L, span * (j + 1) / missingCount);
+            }
+            return;
+        }
+        for (int j = 0; j < missingCount; j++) {
+            list.get(start + j).deviceTs = previous + j + 1L;
+        }
+    }
+
+    private long estimateTrailingDeviceTs(List<MoveEvent> list, int start, int missingCount, long previous) {
+        if (lastEmittedLocTime <= 0) {
+            return -1L;
+        }
+        for (int i = start + missingCount - 1; i >= start; i--) {
+            long estimateLocTime = list.get(i).receiveLocTime;
+            if (estimateLocTime > lastEmittedLocTime) {
+                return previous + Math.min(MAX_MOVE_DELTA_MS, estimateLocTime - lastEmittedLocTime);
+            }
+        }
+        return -1L;
     }
 
     private int computeDelta(Long deviceTs) {
