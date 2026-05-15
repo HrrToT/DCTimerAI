@@ -23,7 +23,7 @@
     <string name="action_share">分享</string>
     <string name="action_exit">退出</string>
     <string name="action_stackmat">Stackmat計時器</string>
-    <string name="action_smartcube">智能方塊</string>
+    <string name="action_smartcube">智能魔方</string>
     <string name="action_scramble">轉亂詳情</string>
 
     <string name="scrambling">轉亂中…</string>
@@ -51,7 +51,7 @@
     <string name="disconnect">中斷連線</string>
     <string name="status">狀態</string>
     <string name="select_device">選擇設備</string>
-    <string name="select_smart_cube">選擇智能方塊</string>
+    <string name="select_smart_cube">選擇智能魔方</string>
     <string name="select_smart_timer">選擇藍牙計時器</string>
     <!-- 设置 -->
     <string name="title_timer">計時</string>

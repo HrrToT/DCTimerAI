@@ -83,7 +83,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private Button btnScramble;  //打乱按钮
     private ImageButton btnLeft;
     private ImageButton btnRight;
-    private Button btnCubeReset;
     private TextView tvTimer;   //计时器
     private SmartCubeImageView scrambleView; //打乱图案
     private Bitmap bmScrambleView;
@@ -314,8 +313,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         btnLeft.setOnClickListener(mOnClickListener);
         btnRight = findViewById(R.id.bt_right);
         btnRight.setOnClickListener(mOnClickListener);
-        btnCubeReset = findViewById(R.id.bt_cube_reset);
-        btnCubeReset.setOnClickListener(mOnClickListener);
         tvTimer = findViewById(R.id.tv_timer);
         tvTimer.setOnTouchListener(mOnTouchListener);
         scrambleView = findViewById(R.id.iv_scramble);
@@ -1582,12 +1579,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    private void updateSmartCubeResetButton() {
-        if (btnCubeReset == null) return;
-        boolean visible = shouldShowTimerPageCubeState() && timer.getTimerState() != DCTTimer.RUNNING;
-        btnCubeReset.setVisibility(visible ? View.VISIBLE : View.GONE);
-    }
-
     private void refreshTimerPageSmartCubeUi() {
         refreshTimerPageSmartCubeUi(true);
     }
@@ -1601,14 +1592,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     if (refreshCubeView && shouldShowTimerPageCubeState()) {
                         showScrambleView();
                     }
-                    updateSmartCubeResetButton();
                     return;
                 }
                 updateScrambleTextView();
                 if (refreshCubeView) {
                     showScrambleView();
                 }
-                updateSmartCubeResetButton();
                 if (shouldUseSmartCubeReadyLayout()) {
                     applySmartCubeReadyLayout();
                 } else {
@@ -1712,7 +1701,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setTimerText(getIdleTimerText());
         timer.setTimerState(DCTTimer.READY);
         tvMulPhase.setText("");
-        updateSmartCubeResetButton();
         showScrambleView();
         updateScrambleTextView();
     }
@@ -1802,11 +1790,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     ((CubeStateDialog) fragment).refreshState();
                 }
                 if (timer.getTimerState() == DCTTimer.RUNNING) {
-                    updateSmartCubeResetButton();
                     return;
                 }
                 updateScrambleTextView();
-                updateSmartCubeResetButton();
             }
         });
     }
@@ -2080,9 +2066,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     break;
                 case R.id.bt_right:    //下一个打乱
                     showNextScramble();
-                    break;
-                case R.id.bt_cube_reset:
-                    resetSmartCubeToSolved();
                     break;
                 case R.id.btn_scan: //扫描设备
                     if (ensureBlePermissions(false, true)) {
@@ -2363,7 +2346,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                             if (wcaWasEnabled) {
                                 Toast.makeText(context, R.string.smart_timer_wca_auto_disabled, Toast.LENGTH_SHORT).show();
                             }
-                            updateSmartCubeResetButton();
                             startBleScanFlow();
                         }
                         //else
@@ -3447,8 +3429,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (showImage || shouldShowTimerPageCubeState())
             scrambleView.setVisibility(shouldShowTimerPageCubeState() ? View.VISIBLE : vi);
         else scrambleView.setVisibility(View.GONE);
-        if (btnCubeReset != null)
-            btnCubeReset.setVisibility(v && shouldShowTimerPageCubeState() ? View.VISIBLE : View.GONE);
     }
 
     private void setReadyHoldUi(boolean active) {
@@ -3466,9 +3446,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         btnRight.setAlpha(alpha);
         toolbar.setAlpha(alpha);
         scrambleView.setAlpha(alpha);
-        if (btnCubeReset != null) {
-            btnCubeReset.setAlpha(alpha);
-        }
         tvMulPhase.setAlpha(alpha);
         if (tvTest != null) {
             tvTest.setAlpha(alpha);
@@ -3624,7 +3601,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         tvScramble.setTextColor(color);
         tvStat.setTextColor(color);
         btnScramble.setTextColor(color);
-        btnCubeReset.setTextColor(color);
         //toolbar.setTitleTextColor(colors[1]);
     }
 
@@ -3733,7 +3709,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             public void run() {
                 updateScrambleTextView();
                 showScrambleView();
-                updateSmartCubeResetButton();
             }
         });
     }
@@ -3742,14 +3717,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         clearSmartCubeScrambleCache();
         tvScramble.setText(currentScramble.getNextScramble(dm.heightPixels < dpi * 376));
         showScrambleView();
-        updateSmartCubeResetButton();
     }
 
     private void showLastScramble() {
         clearSmartCubeScrambleCache();
         tvScramble.setText(currentScramble.getLastScramble(dm.heightPixels < dpi * 376));
         showScrambleView();
-        updateSmartCubeResetButton();
     }
 
     private void showScrambleView() {   //显示打乱状态
