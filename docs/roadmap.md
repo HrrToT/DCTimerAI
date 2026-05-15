@@ -31,7 +31,7 @@
 - release 签名入口已标准化。
 - 支持 `key.properties` 和 `-P` 参数两种签名注入方式。
 - 未提供签名信息时直接报错，不生成不可分发包。
-- 当前版本号基线已进入 `2.2 Beta`。
+- 当前版本号基线已进入 `2.2` 正式版。
 - 保留 `rel.bat` 作为本地 release 构建快捷入口。
 - release APK 输出名固定为 `DCTimer-BLE-v版本号.apk`。
 
