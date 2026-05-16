@@ -3,5 +3,5 @@
   "versionName": "2.2.4",
   "releaseUrl": "https://dctimer.huizhi.ink/",
   "apkUrl": "https://dctimer.huizhi.ink/assets/DCTimer-BLE-v2.2.4.apk",
-  "notes": "当前版本为 DCTimer-BLE v2.2.4。"
+  "notes": "DCTimer-BLE v2.2.4\n-新增智能实时3D魔方渲染（可拖动）"
 }
