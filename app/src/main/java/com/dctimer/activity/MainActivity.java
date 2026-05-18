@@ -132,6 +132,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private SettingAdapter stAdapter;
     private RecyclerView rvSetting;    //设置列表
+    private HorizontalScrollView settingSectionScroll;
+    private LinearLayout settingSectionTabs;
+    private final List<Integer> settingSectionPositions = new ArrayList<>();
+    private final List<TextView> settingSectionTabViews = new ArrayList<>();
+    private int activeSettingSection = -1;
     private ColorSchemeView colorSchemeView;
     public Bitmap bitmap;
 
@@ -411,6 +416,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         rvSetting = findViewById(R.id.lv_settings);
         rvSetting.setLayoutManager(new LinearLayoutManager(context));
         rvSetting.setAdapter(stAdapter);
+        setupSettingSectionTabs(headers);
         disableSmartTimerWcaSettings(false);
         //rvSetting.setOnItemClickListener(mOnItemListener);
 
@@ -3313,6 +3319,97 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
             }).start();
         }
+    }
+
+    private void setupSettingSectionTabs(final Map<Integer, String> headers) {
+        settingSectionScroll = findViewById(R.id.setting_section_scroll);
+        settingSectionTabs = findViewById(R.id.setting_section_tabs);
+        settingSectionPositions.clear();
+        settingSectionTabViews.clear();
+        activeSettingSection = -1;
+        settingSectionTabs.removeAllViews();
+
+        settingSectionPositions.addAll(headers.keySet());
+        Collections.sort(settingSectionPositions);
+        for (int i = 0; i < settingSectionPositions.size(); i++) {
+            final int index = i;
+            final int position = settingSectionPositions.get(i);
+            TextView tab = new TextView(context);
+            tab.setText(headers.get(position));
+            tab.setTextSize(14);
+            tab.setSingleLine(true);
+            tab.setGravity(Gravity.CENTER);
+            tab.setPadding(Math.round(dpi * 14), 0, Math.round(dpi * 14), 0);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, Math.round(dpi * 32));
+            lp.setMargins(0, 0, Math.round(dpi * 6), 0);
+            settingSectionTabs.addView(tab, lp);
+            settingSectionTabViews.add(tab);
+            tab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    setActiveSettingSection(index);
+                    RecyclerView.LayoutManager manager = rvSetting.getLayoutManager();
+                    if (manager instanceof LinearLayoutManager) {
+                        ((LinearLayoutManager) manager).scrollToPositionWithOffset(position, 0);
+                    } else {
+                        rvSetting.scrollToPosition(position);
+                    }
+                }
+            });
+        }
+
+        rvSetting.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                updateSettingSectionByScroll();
+            }
+        });
+        rvSetting.post(new Runnable() {
+            @Override
+            public void run() {
+                updateSettingSectionByScroll();
+            }
+        });
+    }
+
+    private void updateSettingSectionByScroll() {
+        if (settingSectionPositions.isEmpty() || rvSetting == null) return;
+        RecyclerView.LayoutManager manager = rvSetting.getLayoutManager();
+        if (!(manager instanceof LinearLayoutManager)) return;
+        int firstVisible = ((LinearLayoutManager) manager).findFirstVisibleItemPosition();
+        if (firstVisible == RecyclerView.NO_POSITION) return;
+        int active = 0;
+        for (int i = 0; i < settingSectionPositions.size(); i++) {
+            if (firstVisible >= settingSectionPositions.get(i)) active = i;
+            else break;
+        }
+        setActiveSettingSection(active);
+    }
+
+    private void setActiveSettingSection(final int active) {
+        if (active < 0 || active >= settingSectionTabViews.size() || active == activeSettingSection) return;
+        activeSettingSection = active;
+        for (int i = 0; i < settingSectionTabViews.size(); i++) {
+            TextView tab = settingSectionTabViews.get(i);
+            if (i == active) {
+                tab.setTextColor(ContextCompat.getColor(context, R.color.colorAccent));
+                tab.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+                tab.setBackgroundResource(R.drawable.setting_section_tab_active);
+            } else {
+                tab.setTextColor(ContextCompat.getColor(context, R.color.colorGray2));
+                tab.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
+                tab.setBackgroundColor(Color.TRANSPARENT);
+            }
+        }
+        final View activeTab = settingSectionTabViews.get(active);
+        settingSectionScroll.post(new Runnable() {
+            @Override
+            public void run() {
+                int scrollX = activeTab.getLeft() - (settingSectionScroll.getWidth() - activeTab.getWidth()) / 2;
+                settingSectionScroll.smoothScrollTo(Math.max(0, scrollX), 0);
+            }
+        });
     }
 
     public void updateSettingList(int position, String text) {
