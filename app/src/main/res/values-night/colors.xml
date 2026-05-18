@@ -12,4 +12,5 @@
     <color name="colorGray3">#222</color>
     <color name="colorGray4">#282828</color>
     <color name="colorGray5">#141414</color>
+    <color name="settingSectionActiveBg">#262196F3</color>
 </resources>

@@ -12,6 +12,7 @@
     <color name="colorGray3">#eee</color>
     <color name="colorGray4">#e2e2e2</color>
     <color name="colorGray5">#f7f7f7</color>
+    <color name="settingSectionActiveBg">#14448AFF</color>
 
     <color name="transparent">#00000000</color>
     <color name="light_blue">#d09cccf7</color>
