@@ -1,7 +1,7 @@
 {
   "versionCode": 224,
   "versionName": "2.2.4",
-  "releaseUrl": "https://dctimer.huizhi.ink/",
-  "apkUrl": "https://dctimer.huizhi.ink/assets/DCTimer-BLE-v2.2.4.apk",
-  "notes": "DCTimer-BLE v2.2.4\n-新增智能实时3D魔方渲染（可拖动）"
+  "releaseUrl": "https://github.com/HrrToT/DCTimer-BLE-GYRO/releases/latest",
+  "apkUrl": "https://raw.githubusercontent.com/HrrToT/DCTimer-BLE-GYRO/master/website/assets/DCTimerAI-v2.2.4.apk",
+  "notes": "DCTimerAI v2.2.4\n-新增 MoYu AI / MoYu32 姿态跟随\n-新增一键姿态重置\n-优化智能魔方 3D 渲染"
 }

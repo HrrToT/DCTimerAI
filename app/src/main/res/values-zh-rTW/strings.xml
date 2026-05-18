@@ -103,7 +103,7 @@
     <string name="detail_avg">詳細統計：%1$d次去尾平均</string>
     <string name="detail_mean">詳細統計：%1$d次平均</string>
     <string name="detail_session_mean">詳細統計：本組平均</string>
-    <string name="stat_title">統計信息由DCTimer生成於</string>
+    <string name="stat_title">統計資訊由 DCTimerAI 生成於</string>
     <string name="stat_solve">完成次數/嘗試次數：</string>
     <string name="stat_avg">去尾平均：</string>
     <string name="stat_mean">平均：</string>
@@ -129,6 +129,7 @@
     <string name="btn_open">打開</string>
     <string name="btn_scan">掃描</string>
     <string name="btn_cube_reset">重置魔方</string>
+    <string name="btn_reset_orientation">重置姿態</string>
     <string name="btn_refresh">刷新</string>
     <string name="btn_mark_solve">標記爲還原狀態</string>
     <string name="btn_mark_scramble">標記爲正確轉亂</string>
@@ -199,7 +200,11 @@
     <string name="menu_about">關於</string>
     <string name="menu_website">相關網站</string>
     <string name="menu_cubing">Cubing China</string>
-    <string name="about_msg">"版本：%1$s\n基於 DCTimer-Android 開發\n原作者：MeigenChou\n二次開發作者：huizhiLLL\n版權所有 © 2012—2022 MeigenChou\nGPL v3 開源\n開源倉庫地址：https://github.com/huizhiLLL/DCTimer-BLE"</string>
-    <string name="feedback_title">DCTimer反饋</string>
+    <string name="share_c0">我剛剛用 DCTimerAI 完成了測速，</string>
+    <string name="share_c1">"我剛剛用 DCTimerAI 完成了%1$d次%2$s打亂測速，單次最快%3$s，平均%4$s，"</string>
+    <string name="share_c2">"最佳 %1$d 次平均：%2$s，"</string>
+    <string name="share_c3">"你也來試試？ #DCTimerAI# 安卓魔方專用計時器"</string>
+    <string name="about_msg">"版本：%1$s\n基於 DCTimer-Android 和 DCTimer-BLE 開發\n原作者：MeigenChou\nDCTimer-BLE 作者：huizhiLLL\n目前維護與定製：胡圖圖\n技術協作：Codex\n版權所有 © 2012—2022 MeigenChou\nGPL v3 開源\n項目倉庫地址：https://github.com/HrrToT/DCTimer-BLE-GYRO"</string>
+    <string name="feedback_title">DCTimerAI反饋</string>
     <string name="language">cn</string>
 </resources>

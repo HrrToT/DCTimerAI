@@ -1,12 +1,12 @@
 <h4 align="right"><strong><a href="README-en.md">English</a></strong> | 简体中文</h4>
 
 <div align="center">
-  <img src=".github/assets/dctimer-logo.png" alt="DCTimer-BLE logo" width="128" height="128" />
+  <img src=".github/assets/dctimer-logo.png" alt="DCTimer-BLE-GYRO logo" width="128" height="128" />
 
-  <h1>DCTimer-BLE</h1>
+  <h1>DCTimer-BLE-GYRO</h1>
 
   <p>
-    基于 DCTimer-Android 二次开发的魔方计时器，支持智能魔方和奇艺智能计时器
+    基于 DCTimer-BLE 二次开发的魔方计时器，增加 MoYu AI / MoYu32 智能魔方姿态跟随与一键姿态校准能力。
   </p>
 
   <p>
@@ -16,60 +16,97 @@
   </p>
 
   <p>
-    <img src="website/assets/web1.svg" alt="DCTimer-BLE 计时界面截图" height="280" />
-    <img src="website/assets/web3.svg" alt="DCTimer-BLE 功能改进截图" height="280" />
+    <img src="website/assets/web1.svg" alt="DCTimer-BLE timer screen" height="280" />
+    <img src="website/assets/web3.svg" alt="DCTimer-BLE feature improvements" height="280" />
   </p>
 </div>
 
 ---
-## 下载安装
 
-- [Github Releases](https://github.com/huizhiLLL/DCTimer-Android-BLE/releases/latest)
-- [官网直链](https://dctimer.huizhi.ink/assets/DCTimer-BLE-v2.2.4.apk)
+## 项目说明
 
-> DCTimer-BLE 与原 DCTimer 的包名不同，因此不会发生安装冲突
-> 兼容原数据格式，从原 DCTimer 导出数据再导入 DCTimer-BLE 中即可完成数据迁移
+`DCTimer-BLE-GYRO` 是基于 [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE) 的二次开发版本。原项目已经支持普通魔方计时、智能魔方连接、蓝牙计时器、打乱生成、成绩保存、统计和智能魔方 3D 状态预览。
 
-## 特点
+本分支在原功能基础上，重点增加了 `MoYu AI / MoYu32` 智能魔方的陀螺仪/姿态数据读取能力，让状态弹窗中的 3D 魔方可以跟随实物整体转动，并支持一键重置到校准视角。
 
-- 兼容主流的智能魔方品牌
-- 可拖动的智能实时 3D 魔方渲染
-- 精心优化的智能打乱推进/纠错体验
-- 连接快速（无需手动获取 MAC 地址，软件启动到连接成功只需 4-6s）
+## 下载与安装
 
-## 支持
+- [GitHub Releases](https://github.com/HrrToT/DCTimer-BLE-GYRO/releases/latest)
 
-- `Moyu32`（魔域智能）
-- `QYSC` / `Tornado V4`（奇艺智能及风系列）
-- `GAN`（`v2 / v3 / v4`）（GAN 智能）
-- `QiYi Smart Timer`（奇艺智能计时器）
+> 本项目与原 DCTimer 使用不同包名，不会与原版 DCTimer 发生安装冲突。
+> 数据格式兼容原项目，可通过导出/导入数据库迁移历史成绩。
 
-## 改进
+## 新增能力
 
-- 升级到 `AndroidX / AGP 8.9.2 / Gradle 8.11.1 / targetSdk 35`，新安卓设备更稳定
-- 导入导出数据库、导入/导出打乱、背景图选择已切换到系统文档选择器
-- 产生成绩通过方法新增 `智能魔方` / `蓝牙计时器`
-- wca 观察模式补全 8s/12s 语音提醒
-- 手动输入计时自动分割，无需额外输入小数点
-- 成绩列表的 PB 历程标注和排序
+- 支持读取 `MoYu AI / MoYu32` 智能魔方 `171` 姿态数据包。
+- 将 MoYu 姿态包解析为四元数，并接入实时 3D 魔方预览。
+- 修正 MoYu AI 坐标系到 App OpenGL 坐标系的轴映射，使整体转动 `x / y / z` 与屏幕显示方向一致。
+- 在智能魔方状态弹窗中新增 `重置姿态`，可将当前实物姿态校准为白顶绿前的标准显示基准。
+- 调整 3D 魔方默认相机视角，使重置姿态后主要显示白色顶面和绿色正面，便于校准。
+
+## 原有功能
+
+- 普通魔方计时、观察计时、成绩保存和统计。
+- 打乱生成、打乱导入/导出、数据库导入/导出。
+- 智能魔方自动起停表、打乱进度提示、偏离纠错。
+- 智能魔方实时 3D 状态预览。
+- QiYi Smart Timer 蓝牙计时器支持。
+- WCA 观察模式 8 秒/12 秒语音提醒。
+- PB 历史标记和成绩排序。
+
+## 支持设备
+
+原项目已支持：
+
+- `Moyu32` / `MoYu AI` 智能魔方
+- `QYSC` / `Tornado V4` 奇艺智能魔方和 Tornado 系列
+- `GAN v2 / v3 / v4` 智能魔方
+- `QiYi Smart Timer` 奇艺智能计时器
+
+本分支当前新增的姿态跟随能力优先面向：
+
+- `MoYu AI / MoYu32`
+
+其他品牌的姿态跟随暂未接入，但代码中已经保留了统一的 `SmartCubeOrientation` 数据模型和回调管线，后续可按协议继续扩展。
+
+## 使用说明
+
+1. 在 Android Studio 中打开项目并运行到安卓真机。
+2. 在 App 中选择智能魔方计时模式。
+3. 扫描并连接 `MoYu AI / MoYu32` 智能魔方。
+4. 打开智能魔方状态弹窗。
+5. 将实物魔方摆成白顶绿前水平放置。
+6. 点击 `重置姿态`，将当前姿态设为显示基准。
+7. 之后整体转动魔方时，弹窗中的 3D 魔方会跟随姿态变化。
+
+## 开发环境
+
+- AndroidX
+- Android Gradle Plugin 8.9.2
+- Gradle 8.11.1
+- JDK 17
+- `compileSdk / targetSdk` 35
+- Java 原生 Android 项目
+
+## 主要改动文件
+
+- `app/src/main/java/com/dctimer/model/SmartCubeOrientation.java`
+- `app/src/main/java/com/dctimer/model/SmartCube.java`
+- `app/src/main/java/com/dctimer/util/BluetoothTools.java`
+- `app/src/main/java/com/dctimer/util/Moyu32CubeProtocol.java`
+- `app/src/main/java/com/dctimer/view/SmartCube3DView.java`
+- `app/src/main/java/com/dctimer/dialog/CubeStateDialog.java`
+- `app/src/main/res/layout/dialog_cube_state.xml`
 
 ## 致谢
 
-- [DCTimer-Android](https://github.com/MeigenChou/DCTimer-Android)：DCTimer-Android 原仓库
+- [DCTimer-Android](https://github.com/MeigenChou/DCTimer-Android)：原始 DCTimer-Android 项目
+- [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE)：本项目的直接基础版本
 - [cstimer](https://github.com/cs0x7f/cstimer)：智能魔方协议参考
 - [smartcube-web-bluetooth](https://github.com/poliva/smartcube-web-bluetooth)：智能魔方协议参考
 - [qiyi_smartcube_protocol](https://codeberg.org/Flying-Toast/qiyi_smartcube_protocol)：智能魔方协议参考
-- [CubicTimer](https://github.com/hato-ya/CubicTimer)：奇艺智能计时器接入参考
-- [妙言](https://miaoyan.app)：官网设计参考
-- [Codex](https://github.com/codex)：开发伙伴
-
----
-
-- [Soda](https://space.bilibili.com/400839068)：奇艺智能及风智能测试魔方来源
-- [Visionary](https://space.bilibili.com/674586122)：GAN 智能魔方测试
-
-如果这个项目对你有帮助，希望你能给它一颗 Star， 这将成为我后续维护的动力 ~
+- [CubicTimer](https://github.com/hato-ya/CubicTimer)：QiYi Smart Timer 接入参考
 
 ## License
 
-GPLv3
+本项目沿用原项目的 GPLv3 协议。原项目版权和署名应继续保留，本分支新增的 MoYu AI 姿态跟随相关代码由当前仓库维护。

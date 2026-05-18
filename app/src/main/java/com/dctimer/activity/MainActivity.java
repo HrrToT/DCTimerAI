@@ -77,7 +77,7 @@ import uz.shift.colorpicker.LineColorPicker;
 import uz.shift.colorpicker.OnColorChangedListener;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
-    private static final String UPDATE_INFO_URL = "https://dctimer.huizhi.ink/update.json";
+    private static final String UPDATE_INFO_URL = "https://raw.githubusercontent.com/HrrToT/DCTimer-BLE-GYRO/master/website/update.json";
     private APP app;
     public Context context;
     private DrawerLayout drawer;
@@ -238,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         //System.out.println(dpi+", "+dm.widthPixels);
         File appExternalDir = getExternalFilesDir(null);
         if (appExternalDir != null) {
-            defaultPath = new File(appExternalDir, "DCTimer-BLE").getAbsolutePath() + File.separator;
+            defaultPath = new File(appExternalDir, "DCTimerAI").getAbsolutePath() + File.separator;
         } else {
             defaultPath = getFilesDir().getAbsolutePath() + File.separator;
         }
@@ -330,6 +330,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             public void onClick(View view) {
                 if (shouldShowTimerPageCubeState()) {
                     showCubeStateDialog();
+                }
+            }
+        });
+        smartCube3DView.setOnDoubleTapListener(new SmartCube3DView.OnDoubleTapListener() {
+            @Override
+            public void onDoubleTap(SmartCube3DView view) {
+                if (shouldShowTimerPageCubeState()) {
+                    resetSmartCubeOrientationViews();
                 }
             }
         });
@@ -457,6 +465,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         bluetoothTools = new BluetoothTools(this);
         bluetoothTools.setCubeStateChangedCallback(cubeStateChangeCallback);
+        bluetoothTools.setCubeOrientationChangedCallback(cubeOrientationChangeCallback);
         bluetoothTools.setTimerStateCallback(timerStateCallback);
         //getBluetoothAdapter();
     }
@@ -1947,6 +1956,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         dialog.show(getSupportFragmentManager(), "CubeState");
     }
 
+    public void resetSmartCubeOrientationViews() {
+        if (smartCube3DView != null) {
+            smartCube3DView.resetOrientationToWhiteTopGreenFront();
+        }
+        androidx.fragment.app.Fragment fragment = getSupportFragmentManager().findFragmentByTag("CubeState");
+        if (fragment instanceof CubeStateDialog) {
+            ((CubeStateDialog) fragment).resetOrientationView();
+        }
+    }
+
     private void updateSmartCubeMoveUi(final String fromState, final String toState, final int move) {
         runOnUiThread(new Runnable() {
             @Override
@@ -2018,6 +2037,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 });
             }
+        }
+    };
+
+    private SmartCube.OrientationChangedCallback cubeOrientationChangeCallback = new SmartCube.OrientationChangedCallback() {
+        @Override
+        public void onOrientationChanged(SmartCube cube, final SmartCubeOrientation orientation) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (smartCube3DView != null) {
+                        smartCube3DView.setDeviceOrientation(orientation);
+                    }
+                    androidx.fragment.app.Fragment fragment = getSupportFragmentManager().findFragmentByTag("CubeState");
+                    if (fragment instanceof CubeStateDialog) {
+                        ((CubeStateDialog) fragment).updateOrientation(orientation);
+                    }
+                }
+            });
         }
     };
 
@@ -3762,8 +3799,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void setSmartCubeImageSize() {
-        int width = (int) (imageSize * dpi * 0.67f);
-        int height = (int) (imageSize * dpi * 0.76f);
+        int width = (int) (imageSize * dpi * 0.78f);
+        int height = (int) (imageSize * dpi * 0.86f);
         int bottomMargin = APP.getPixel(5);
         ViewGroup.LayoutParams current = smartCube3DView != null ? smartCube3DView.getLayoutParams() : scrambleView.getLayoutParams();
         if (current instanceof RelativeLayout.LayoutParams) {
@@ -3795,6 +3832,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             smartCube3DView.bringToFront();
             smartCube3DView.setVisibility(View.VISIBLE);
             smartCube3DView.showCubeState(cubeState);
+            SmartCube activeCube = getActiveSmartCube();
+            if (activeCube != null) {
+                smartCube3DView.setDeviceOrientation(activeCube.getOrientation());
+            }
         } else {
             scrambleView.setVisibility(View.VISIBLE);
             scrambleView.showCubeState(cubeState);

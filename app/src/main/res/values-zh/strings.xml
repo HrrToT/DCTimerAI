@@ -109,7 +109,7 @@
     <string name="detail_avg">详细成绩：%1$d次去尾平均</string>
     <string name="detail_mean">详细成绩：%1$d次平均</string>
     <string name="detail_session_mean">详细成绩：本组平均</string>
-    <string name="stat_title">统计信息由DCTimer生成于</string>
+    <string name="stat_title">统计信息由 DCTimerAI 生成于</string>
     <string name="stat_solve">完成次数/尝试次数：</string>
     <string name="stat_avg">去尾平均：</string>
     <string name="stat_mean">平均：</string>
@@ -135,6 +135,7 @@
     <string name="btn_open">打开</string>
     <string name="btn_scan">扫描</string>
     <string name="btn_cube_reset">重置魔方</string>
+    <string name="btn_reset_orientation">重置姿态</string>
     <string name="btn_refresh">刷新</string>
     <string name="btn_mark_solve">标记为还原状态</string>
     <string name="btn_mark_scramble">标记为正确打乱</string>
@@ -205,10 +206,10 @@
     <string name="face_front">前面</string>
     <string name="face_back">后面</string>
     <!-- 分享内容 -->
-    <string name="share_c0">我刚刚用DCTimer完成了测速，</string>
-    <string name="share_c1">"我刚刚完成了%1$d次%2$s打乱测速，单次最快%3$s，平均%4$s，"</string>
+    <string name="share_c0">我刚刚用 DCTimerAI 完成了测速，</string>
+    <string name="share_c1">"我刚刚用 DCTimerAI 完成了%1$d次%2$s打乱测速，单次最快%3$s，平均%4$s，"</string>
     <string name="share_c2">"最快%1$d次平均%2$s，"</string>
-    <string name="share_c3">"你也来试试？ #DCTimer# 安卓魔方专用计时器"</string>
+    <string name="share_c3">"你也来试试？ #DCTimerAI# 安卓魔方专用计时器"</string>
     <!-- 更多 -->
     <string name="menu_more">更多</string>
     <string name="menu_lab">试验</string>
@@ -217,7 +218,7 @@
     <string name="menu_about">关于</string>
     <string name="menu_website">相关网站</string>
     <string name="menu_cubing">粗饼网</string>
-    <string name="about_msg">"版本：%1$s\n基于 DCTimer-Android 开发\n原作者：MeigenChou\n二次开发作者：huizhiLLL\n版权所有 © 2012—2022 MeigenChou\nGPL v3 开源\n开源仓库地址：https://github.com/huizhiLLL/DCTimer-BLE"</string>
-    <string name="feedback_title">DCTimer反馈</string>
+    <string name="about_msg">"版本：%1$s\n基于 DCTimer-Android 和 DCTimer-BLE 开发\n原作者：MeigenChou\nDCTimer-BLE 作者：huizhiLLL\n当前维护与定制：胡图图\n技术协作：Codex\n版权所有 © 2012—2022 MeigenChou\nGPL v3 开源\n项目仓库地址：https://github.com/HrrToT/DCTimer-BLE-GYRO"</string>
+    <string name="feedback_title">DCTimerAI反馈</string>
     <string name="language">cn</string>
 </resources>

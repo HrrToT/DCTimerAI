@@ -24,7 +24,7 @@ def hasReleaseSigning = releaseSigning.every { _, value ->
 
 def appVersionCode = 224
 def appVersionName = "2.2.4"
-def releaseApkBaseName = "DCTimer-BLE-v${appVersionName}".toString()
+def releaseApkBaseName = "DCTimerAI-v${appVersionName}".toString()
 def releaseApkFileName = "${releaseApkBaseName}.apk".toString()
 
 android {
@@ -102,6 +102,7 @@ tasks.register("renameReleaseApk") {
         if (outputMetadataFile.exists()) {
             def outputMetadataText = outputMetadataFile.getText("UTF-8")
             outputMetadataText = outputMetadataText.replace('"outputFile": "app-release.apk"', "\"outputFile\": \"${releaseApkFileName}\"")
+            outputMetadataText = outputMetadataText.replace('"outputFile": "DCTimerAI-vnull.apk"', "\"outputFile\": \"${releaseApkFileName}\"")
             outputMetadataText = outputMetadataText.replace('"outputFile": "DCTimer-BLE-vnull.apk"', "\"outputFile\": \"${releaseApkFileName}\"")
             outputMetadataFile.write(outputMetadataText, "UTF-8")
         }
