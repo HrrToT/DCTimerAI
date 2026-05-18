@@ -1,9 +1,9 @@
 <h4 align="right">English | <strong><a href="README.md">简体中文</a></strong></h4>
 
 <div align="center">
-  <img src=".github/assets/dctimer-logo.png" alt="DCTimer-BLE-GYRO logo" width="128" height="128" />
+  <img src=".github/assets/dctimer-logo.png" alt="DCTimerAI logo" width="128" height="128" />
 
-  <h1>DCTimer-BLE-GYRO</h1>
+  <h1>DCTimerAI</h1>
 
   <p>
     A speedcubing timer based on DCTimer-BLE, with MoYu AI / MoYu32 gyroscope orientation tracking and one-tap orientation calibration.
@@ -16,8 +16,8 @@
   </p>
 
   <p>
-    <img src="website/assets/web1.svg" alt="DCTimer-BLE timer screen" height="280" />
-    <img src="website/assets/web3.svg" alt="DCTimer-BLE feature improvements" height="280" />
+    <img src="website/assets/web1.svg" alt="DCTimerAI timer screen" height="280" />
+    <img src="website/assets/web3.svg" alt="DCTimerAI feature improvements" height="280" />
   </p>
 </div>
 
@@ -25,7 +25,7 @@
 
 ## About
 
-`DCTimer-BLE-GYRO` is a modified version of [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE). The upstream project already provides speedcubing timing, smart cube connection, Bluetooth timer support, scramble generation, solve history, statistics, and real-time smart cube 3D previews.
+`DCTimerAI` is a modified version of [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE). The upstream project already provides speedcubing timing, smart cube connection, Bluetooth timer support, scramble generation, solve history, statistics, and real-time smart cube 3D previews.
 
 This fork focuses on adding gyroscope/orientation support for `MoYu AI / MoYu32` smart cubes. The cube state dialog can now render the 3D cube according to the physical cube orientation and supports one-tap calibration to a white-top, green-front reference view.
 
@@ -33,7 +33,7 @@ This fork focuses on adding gyroscope/orientation support for `MoYu AI / MoYu32`
 
 - [GitHub Releases](https://github.com/HrrToT/DCTimer-BLE-GYRO/releases/latest)
 
-> DCTimer-BLE-GYRO uses a different package name from the original DCTimer, so it will not conflict during installation.
+> DCTimerAI uses a different package name from the original DCTimer, so it will not conflict during installation.
 > The data format remains compatible with the upstream project. You can export data from the original DCTimer/DCTimer-BLE and import it into this version.
 
 ## New Features
@@ -97,6 +97,12 @@ Other brands do not yet have orientation tracking enabled, but the shared `Smart
 - `app/src/main/java/com/dctimer/view/SmartCube3DView.java`
 - `app/src/main/java/com/dctimer/dialog/CubeStateDialog.java`
 - `app/src/main/res/layout/dialog_cube_state.xml`
+
+## Current Maintenance
+
+- Current maintenance and customization: Hu Tutu
+- Technical collaboration: Codex
+- Current repository: [HrrToT/DCTimer-BLE-GYRO](https://github.com/HrrToT/DCTimer-BLE-GYRO)
 
 ## Acknowledgements
 

@@ -1,9 +1,9 @@
 <h4 align="right"><strong><a href="README-en.md">English</a></strong> | 简体中文</h4>
 
 <div align="center">
-  <img src=".github/assets/dctimer-logo.png" alt="DCTimer-BLE-GYRO logo" width="128" height="128" />
+  <img src=".github/assets/dctimer-logo.png" alt="DCTimerAI logo" width="128" height="128" />
 
-  <h1>DCTimer-BLE-GYRO</h1>
+  <h1>DCTimerAI</h1>
 
   <p>
     基于 DCTimer-BLE 二次开发的魔方计时器，增加 MoYu AI / MoYu32 智能魔方姿态跟随与一键姿态校准能力。
@@ -16,8 +16,8 @@
   </p>
 
   <p>
-    <img src="website/assets/web1.svg" alt="DCTimer-BLE timer screen" height="280" />
-    <img src="website/assets/web3.svg" alt="DCTimer-BLE feature improvements" height="280" />
+    <img src="website/assets/web1.svg" alt="DCTimerAI timer screen" height="280" />
+    <img src="website/assets/web3.svg" alt="DCTimerAI feature improvements" height="280" />
   </p>
 </div>
 
@@ -25,7 +25,7 @@
 
 ## 项目说明
 
-`DCTimer-BLE-GYRO` 是基于 [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE) 的二次开发版本。原项目已经支持普通魔方计时、智能魔方连接、蓝牙计时器、打乱生成、成绩保存、统计和智能魔方 3D 状态预览。
+`DCTimerAI` 是基于 [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE) 的二次开发版本。原项目已经支持普通魔方计时、智能魔方连接、蓝牙计时器、打乱生成、成绩保存、统计和智能魔方 3D 状态预览。
 
 本分支在原功能基础上，重点增加了 `MoYu AI / MoYu32` 智能魔方的陀螺仪/姿态数据读取能力，让状态弹窗中的 3D 魔方可以跟随实物整体转动，并支持一键重置到校准视角。
 
@@ -33,7 +33,7 @@
 
 - [GitHub Releases](https://github.com/HrrToT/DCTimer-BLE-GYRO/releases/latest)
 
-> 本项目与原 DCTimer 使用不同包名，不会与原版 DCTimer 发生安装冲突。
+> DCTimerAI 与原 DCTimer 使用不同包名，不会与原版 DCTimer 发生安装冲突。
 > 数据格式兼容原项目，可通过导出/导入数据库迁移历史成绩。
 
 ## 新增能力
@@ -97,6 +97,12 @@
 - `app/src/main/java/com/dctimer/view/SmartCube3DView.java`
 - `app/src/main/java/com/dctimer/dialog/CubeStateDialog.java`
 - `app/src/main/res/layout/dialog_cube_state.xml`
+
+## 当前维护
+
+- 当前维护与定制：胡图图
+- 技术协作：Codex
+- 当前仓库地址：[HrrToT/DCTimer-BLE-GYRO](https://github.com/HrrToT/DCTimer-BLE-GYRO)
 
 ## 致谢
 
