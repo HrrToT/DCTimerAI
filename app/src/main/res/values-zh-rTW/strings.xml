@@ -204,7 +204,7 @@
     <string name="share_c1">"我剛剛用 DCTimerAI 完成了%1$d次%2$s打亂測速，單次最快%3$s，平均%4$s，"</string>
     <string name="share_c2">"最佳 %1$d 次平均：%2$s，"</string>
     <string name="share_c3">"你也來試試？ #DCTimerAI# 安卓魔方專用計時器"</string>
-    <string name="about_msg">"版本：%1$s\n基於 DCTimer-Android 和 DCTimer-BLE 開發\n原作者：MeigenChou\nDCTimer-BLE 作者：huizhiLLL\n目前維護與定製：胡圖圖\n技術協作：Codex\n版權所有 © 2012—2022 MeigenChou\nGPL v3 開源\n項目倉庫地址：https://github.com/HrrToT/DCTimer-BLE-GYRO"</string>
+    <string name="about_msg">"版本：%1$s\n基於 DCTimer-Android 和 DCTimer-BLE 開發\n原作者：MeigenChou\nDCTimer-BLE 作者：huizhiLLL\n目前維護與定製：胡圖圖\n技術協作：Codex\n版權所有 © 2012—2022 MeigenChou\nGPL v3 開源\n項目倉庫地址：https://github.com/HrrToT/DCTimerAI"</string>
     <string name="feedback_title">DCTimerAI反饋</string>
     <string name="language">cn</string>
 </resources>

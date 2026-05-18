@@ -16,8 +16,9 @@
   </p>
 
   <p>
-    <img src="website/assets/web1.svg" alt="DCTimerAI timer screen" height="280" />
-    <img src="website/assets/web3.svg" alt="DCTimerAI feature improvements" height="280" />
+    <img src="JPG/35.jpg" alt="DCTimerAI main screen preview" height="280" />
+    <img src="JPG/36.jpg" alt="DCTimerAI smart cube state preview" height="280" />
+    <img src="JPG/37.jpg" alt="DCTimerAI cubie renderer preview" height="280" />
   </p>
 </div>
 
@@ -31,7 +32,7 @@ This fork focuses on adding gyroscope/orientation support for `MoYu AI / MoYu32`
 
 ## Download
 
-- [GitHub Releases](https://github.com/HrrToT/DCTimer-BLE-GYRO/releases/latest)
+- [GitHub Releases](https://github.com/HrrToT/DCTimerAI/releases/latest)
 
 > DCTimerAI uses a different package name from the original DCTimer, so it will not conflict during installation.
 > The data format remains compatible with the upstream project. You can export data from the original DCTimer/DCTimer-BLE and import it into this version.
@@ -43,6 +44,15 @@ This fork focuses on adding gyroscope/orientation support for `MoYu AI / MoYu32`
 - Maps the MoYu AI coordinate system into the app's OpenGL coordinate system so whole-cube `x / y / z` rotations match the on-screen direction.
 - Adds `Reset orientation` in the smart cube state dialog to calibrate the current physical pose as the white-top, green-front display reference.
 - Adjusts the default 3D camera so the calibrated view mainly shows the white top face and green front face.
+- Supports quick double-tap reset on the main screen cube preview and keeps the live smart-cube preview in sync.
+
+## Visual Changes
+
+- Rebuilds the old sticker-style preview into a full `cubie`-based 3D renderer, where each visible piece has its own front and side surfaces.
+- Moves closer to the look of modern stickerless cubes: white plastic body feel, solid face colors, and darker same-color side walls instead of flat sticker-only rendering.
+- Uses different corner-radius rules for different piece types: rounder centers, center-facing edge corners with larger rounding, and sharper corner pieces.
+- Narrows the layer gaps and unifies the renderer used by the main page and the smart cube state dialog, while preserving orientation follow and layer-turn animation behavior.
+- Improves framing for the top-down preview so the cube is displayed more completely in both the main page and the dialog.
 
 ## Upstream Features
 
@@ -95,6 +105,8 @@ Other brands do not yet have orientation tracking enabled, but the shared `Smart
 - `app/src/main/java/com/dctimer/util/BluetoothTools.java`
 - `app/src/main/java/com/dctimer/util/Moyu32CubeProtocol.java`
 - `app/src/main/java/com/dctimer/view/SmartCube3DView.java`
+- `app/src/main/java/com/dctimer/view/SmartCubeImageView.java`
+- `app/src/main/java/com/dctimer/util/Utils.java`
 - `app/src/main/java/com/dctimer/dialog/CubeStateDialog.java`
 - `app/src/main/res/layout/dialog_cube_state.xml`
 
@@ -102,7 +114,7 @@ Other brands do not yet have orientation tracking enabled, but the shared `Smart
 
 - Current maintenance and customization: Hu Tutu
 - Technical collaboration: Codex
-- Current repository: [HrrToT/DCTimer-BLE-GYRO](https://github.com/HrrToT/DCTimer-BLE-GYRO)
+- Current repository: [HrrToT/DCTimerAI](https://github.com/HrrToT/DCTimerAI)
 
 ## Acknowledgements
 

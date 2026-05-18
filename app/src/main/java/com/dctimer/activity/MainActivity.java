@@ -77,7 +77,7 @@ import uz.shift.colorpicker.LineColorPicker;
 import uz.shift.colorpicker.OnColorChangedListener;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
-    private static final String UPDATE_INFO_URL = "https://raw.githubusercontent.com/HrrToT/DCTimer-BLE-GYRO/master/website/update.json";
+    private static final String UPDATE_INFO_URL = "https://raw.githubusercontent.com/HrrToT/DCTimerAI/master/website/update.json";
     private APP app;
     public Context context;
     private DrawerLayout drawer;

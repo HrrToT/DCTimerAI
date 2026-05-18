@@ -16,8 +16,9 @@
   </p>
 
   <p>
-    <img src="website/assets/web1.svg" alt="DCTimerAI timer screen" height="280" />
-    <img src="website/assets/web3.svg" alt="DCTimerAI feature improvements" height="280" />
+    <img src="JPG/35.jpg" alt="DCTimerAI main screen preview" height="280" />
+    <img src="JPG/36.jpg" alt="DCTimerAI smart cube state preview" height="280" />
+    <img src="JPG/37.jpg" alt="DCTimerAI cubie renderer preview" height="280" />
   </p>
 </div>
 
@@ -31,7 +32,7 @@
 
 ## 下载与安装
 
-- [GitHub Releases](https://github.com/HrrToT/DCTimer-BLE-GYRO/releases/latest)
+- [GitHub Releases](https://github.com/HrrToT/DCTimerAI/releases/latest)
 
 > DCTimerAI 与原 DCTimer 使用不同包名，不会与原版 DCTimer 发生安装冲突。
 > 数据格式兼容原项目，可通过导出/导入数据库迁移历史成绩。
@@ -43,6 +44,15 @@
 - 修正 MoYu AI 坐标系到 App OpenGL 坐标系的轴映射，使整体转动 `x / y / z` 与屏幕显示方向一致。
 - 在智能魔方状态弹窗中新增 `重置姿态`，可将当前实物姿态校准为白顶绿前的标准显示基准。
 - 调整 3D 魔方默认相机视角，使重置姿态后主要显示白色顶面和绿色正面，便于校准。
+- 主界面支持双击魔方快速重置视角，并同步作用到智能魔方实时预览。
+
+## 外观变化
+
+- 将原先偏贴纸式的预览重构为 `cubie` 级立体渲染，每个小块都具有完整的正面和侧面。
+- 改为更接近现代实色魔方的视觉风格：白色塑料感主体、彩色实色面、同色深边过渡，而不是单纯平面贴纸。
+- 按块型区分圆角策略：中心块更圆，棱块靠中心方向的角更圆，角块保持更利落的外轮廓。
+- 缩小层间缝隙，并统一主页面与状态弹窗的渲染表现，保持姿态跟随和转层动画共用同一套逻辑。
+- 同步优化俯视角 framing，让主界面和弹窗中的左侧切角问题得到修正，整体显示更完整。
 
 ## 原有功能
 
@@ -95,6 +105,8 @@
 - `app/src/main/java/com/dctimer/util/BluetoothTools.java`
 - `app/src/main/java/com/dctimer/util/Moyu32CubeProtocol.java`
 - `app/src/main/java/com/dctimer/view/SmartCube3DView.java`
+- `app/src/main/java/com/dctimer/view/SmartCubeImageView.java`
+- `app/src/main/java/com/dctimer/util/Utils.java`
 - `app/src/main/java/com/dctimer/dialog/CubeStateDialog.java`
 - `app/src/main/res/layout/dialog_cube_state.xml`
 
@@ -102,7 +114,7 @@
 
 - 当前维护与定制：胡图图
 - 技术协作：Codex
-- 当前仓库地址：[HrrToT/DCTimer-BLE-GYRO](https://github.com/HrrToT/DCTimer-BLE-GYRO)
+- 当前仓库地址：[HrrToT/DCTimerAI](https://github.com/HrrToT/DCTimerAI)
 
 ## 致谢
 
