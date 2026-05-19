@@ -38,7 +38,7 @@ public class APP extends Application {
     public static float dpi, fontScale;
     public static String defaultPath;// = Environment.getExternalStorageDirectory().getPath()+"/DCTimer/";
     public static String dataPath;
-    public static String[][] itemStr = new String[17][];
+    public static String[][] itemStr = new String[18][];
 
     public static int scrambleIdx;
     public static int[] colors = new int[7];
@@ -100,6 +100,7 @@ public class APP extends Application {
     public static int bleDeviceType;
     public static int smartCubeSolveOrientation;
     public static int smartCubeScrambleProgressStyle;
+    public static int smartCubeLayoutMode;
 
     @Override
     public void onCreate() {
@@ -230,6 +231,8 @@ public class APP extends Application {
         if (smartCubeSolveOrientation < 0 || smartCubeSolveOrientation >= 24) smartCubeSolveOrientation = 0;
         smartCubeScrambleProgressStyle = sp.getInt("scadv", 0);
         if (smartCubeScrambleProgressStyle < 0 || smartCubeScrambleProgressStyle > 1) smartCubeScrambleProgressStyle = 0;
+        smartCubeLayoutMode = sp.getInt("sclayout", 0);
+        if (smartCubeLayoutMode < 0 || smartCubeLayoutMode > 1) smartCubeLayoutMode = 0;
     }
 
     public static void resetPref() {
@@ -253,6 +256,7 @@ public class APP extends Application {
         for (int i = 0; i < 4; i++) swipeType[i] = i + 1;
         samplingRate = 44100; dataFormat = AudioFormat.ENCODING_PCM_8BIT;
         smartCubeSolveOrientation = 0; smartCubeScrambleProgressStyle = 0;
+        smartCubeLayoutMode = 0;
     }
 
     public static int getPixel(int dp) {

@@ -28,10 +28,11 @@ public class SettingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public static final int ST_SENSITIVITY = 13;
     public static final int ST_SMART_ORIENTATION = 15;
     public static final int ST_SMART_SCRAMBLE_PROGRESS = 16;
-    public static final int ST_SCR_FONT = 18;
-    public static final int ST_IMAGE_SIZE = 21;
-    public static final int ST_TIMER_SIZE = 43;
-    public static final int ST_OPACITY = 48;
+    public static final int ST_SMART_LAYOUT = 17;
+    public static final int ST_SCR_FONT = 19;
+    public static final int ST_IMAGE_SIZE = 22;
+    public static final int ST_TIMER_SIZE = 44;
+    public static final int ST_OPACITY = 49;
     private MainActivity dct;
     private Map<Integer, String> headers;
     private List<Map<String, Object>> cells;
@@ -135,78 +136,81 @@ public class SettingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 case ST_SMART_SCRAMBLE_PROGRESS:
                     map.put("detail", dct.getResources().getStringArray(R.array.opt_smart_scramble_progress)[smartCubeScrambleProgressStyle]);
                     break;
+                case ST_SMART_LAYOUT:
+                    map.put("detail", dct.getResources().getStringArray(R.array.opt_smart_layout)[smartCubeLayoutMode]);
+                    break;
                 case ST_SCR_FONT:    //打乱字体大小
                     map.put("detail", String.valueOf(scrambleSize));
                     map.put("value", scrambleSize - 12);
                     break;
-                case 19:    //等宽打乱
+                case 20:    //等宽打乱
                     map.put("detail", monoFont);
                     break;
-                case 20:    //显示打乱
+                case 21:    //显示打乱
                     map.put("detail", showImage);
                     break;
-                case 24:    //确认成绩
+                case 25:    //确认成绩
                     map.put("detail", promptToSave);
                     break;
-                case 25:    //滚动平均1
+                case 26:    //滚动平均1
                     map.put("detail", itemStr[14][avg1Type]);
                     break;
-                case 26:
+                case 27:
                     map.put("detail", String.valueOf(avg1len));
                     break;
-                case 27:    //滚动平均2
+                case 28:    //滚动平均2
                     map.put("detail", itemStr[4][avg2Type]);
                     break;
-                case 28:
+                case 29:
                     map.put("detail", String.valueOf(avg2len));
                     break;
-                case 29:    //更改分组
+                case 30:    //更改分组
                     map.put("detail", selectSession);
                     break;
-                case 31:    //三阶求解
+                case 32:    //三阶求解
                     map.put("detail", itemStr[5][solve333]);
                     break;
-                case 32:    //SQ1求解
+                case 33:    //SQ1求解
                     map.put("detail", itemStr[12][solveSq1]);
                     break;
-                case 33:    //二阶求解
+                case 34:    //二阶求解
                     map.put("detail", itemStr[6][solve222]);
                     break;
-                case 40:    //五魔配色
+                case 41:    //五魔配色
                     map.put("detail", itemStr[7][megaColorScheme]);
                     break;
-                case 42:    //计时器字体
+                case 43:    //计时器字体
                     map.put("detail", itemStr[8][timerFont]);
                     break;
                 case ST_TIMER_SIZE:    //计时器大小
                     map.put("detail", String.valueOf(timerSize));
                     map.put("value", timerSize - 50);
                     break;
-                case 47:    //显示背景图
+                case 48:    //显示背景图
                     map.put("detail", !useBgcolor);
                     break;
-                case 53:    //左
+                case 54:    //左
                     map.put("detail", itemStr[15][swipeType[0]]);
                     break;
-                case 54:    //右
+                case 55:    //右
                     map.put("detail", itemStr[15][swipeType[1]]);
                     break;
-                case 55:    //上
+                case 56:    //上
                     map.put("detail", itemStr[15][swipeType[2]]);
                     break;
-                case 56:    //下
+                case 57:    //下
                     map.put("detail", itemStr[15][swipeType[3]]);
                     break;
-                case 58:    //屏幕常亮
+                case 59:    //屏幕常亮
                     map.put("detail", screenOn);
                     break;
-                case 59:    //触感反馈
+                case 60:    //触感反馈
                     map.put("detail", itemStr[10][vibrateType]);
                     break;
-                case 60:    //持续时间
+                case 61:    //持续时间
                     map.put("detail", itemStr[11][vibrateTime]);
                     break;
-                case 61:    //屏幕方向
+                case 62:    //屏幕方向
                     map.put("detail", itemStr[9][screenOri]);
                     break;
             }

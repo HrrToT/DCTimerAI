@@ -315,6 +315,7 @@
     <array name="item_smart">
         <item>解法字段生成基准</item>
         <item>打乱推进样式</item>
+        <item>布局</item>
     </array>
 
     <array name="item_scramble">
@@ -337,6 +338,11 @@
     <array name="opt_smart_scramble_progress">
         <item>已推进自动消失</item>
         <item>已推进变浅保留</item>
+    </array>
+
+    <array name="opt_smart_layout">
+        <item>默认</item>
+        <item>沉浸式</item>
     </array>
 
     <array name="item_stats">

@@ -63,6 +63,7 @@
 - 智能魔方状态预览使用独立 `SmartCube3DView`，内部基于 `GLSurfaceView + OpenGL ES 2.0` 渲染 `3x3` 魔方，并允许手动拖动改变视角。
 - `SmartCube3DView` 只消费业务层传入的 `facelet` 状态和 `move` 动画指令，不直接接触 BLE 协议解析、计时状态机或成绩保存逻辑。
 - 普通打乱图继续使用 `SmartCubeImageView` 的 Canvas / Bitmap 路径。
+- 智能魔方计时页可按用户设置切换默认布局和大屏沉浸式布局；沉浸式布局仅在智能魔方链路且 `smallestScreenWidthDp >= 720` 时生效，小屏设备自动保持默认布局。
 - 智能魔方和蓝牙计时器绿色准备态可复用沉浸式预览布局；普通计时器 `READY` 保持普通计时区布局，只在 `RUNNING` 后进入沉浸式计时布局。
 
 ## 平台边界
@@ -71,4 +72,3 @@
 - `compileSdk / targetSdk` 保持 `35`，除非出现新的平台升级任务。
 - 文件访问继续使用 `SAF / Uri`，不回退到旧文件路径选择器。
 - release 包必须提供签名信息；缺少签名信息时应直接失败。
-

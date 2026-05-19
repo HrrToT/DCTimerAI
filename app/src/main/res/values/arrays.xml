@@ -370,6 +370,7 @@
     <array name="item_smart">
         <item>Generated solution orientation</item>
         <item>Scramble progress style</item>
+        <item>Layout</item>
     </array>
 
     <array name="item_scramble">
@@ -392,6 +393,11 @@
     <array name="opt_smart_scramble_progress">
         <item>Hide completed moves</item>
         <item>Dim completed moves</item>
+    </array>
+
+    <array name="opt_smart_layout">
+        <item>Default</item>
+        <item>Immersive</item>
     </array>
 
     <array name="item_stats">
