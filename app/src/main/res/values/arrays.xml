@@ -367,12 +367,37 @@
         <item>Sensitivity</item>
     </array>
 
+    <array name="item_smart">
+        <item>Generated solution orientation</item>
+        <item>Scramble progress style</item>
+        <item>Layout</item>
+    </array>
+
     <array name="item_scramble">
         <item>Scramble size</item>
         <item>Monospace scramble font</item>
         <item>Show scramble view</item>
         <item>Scramble view size</item>
         <item>EG traning scramble</item>
+    </array>
+
+    <array name="opt_smart_cube_faces">
+        <item>White</item>
+        <item>Red</item>
+        <item>Green</item>
+        <item>Yellow</item>
+        <item>Orange</item>
+        <item>Blue</item>
+    </array>
+
+    <array name="opt_smart_scramble_progress">
+        <item>Hide completed moves</item>
+        <item>Dim completed moves</item>
+    </array>
+
+    <array name="opt_smart_layout">
+        <item>Default</item>
+        <item>Immersive (for large-screen devices 10 inches and above)</item>
     </array>
 
     <array name="item_stats">

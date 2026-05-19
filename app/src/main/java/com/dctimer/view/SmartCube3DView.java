@@ -672,7 +672,6 @@ public class SmartCube3DView extends GLSurfaceView {
             GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexCount);
             GLES20.glDisableVertexAttribArray(positionHandle);
         }
-
         private void setColorUniform(int color, Vec3 normal) {
             float alpha = Color.alpha(color) / 255f;
             float red = Color.red(color) / 255f;

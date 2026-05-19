@@ -1,12 +1,7 @@
 package com.dctimer.activity;
 
 import static com.dctimer.APP.*;
-import static com.dctimer.adapter.SettingAdapter.ST_IMAGE_SIZE;
-import static com.dctimer.adapter.SettingAdapter.ST_OPACITY;
-import static com.dctimer.adapter.SettingAdapter.ST_SCR_FONT;
-import static com.dctimer.adapter.SettingAdapter.ST_SENSITIVITY;
-import static com.dctimer.adapter.SettingAdapter.ST_START_DELAY;
-import static com.dctimer.adapter.SettingAdapter.ST_TIMER_SIZE;
+import static com.dctimer.adapter.SettingAdapter.*;
 import static scrambler.Scrambler.*;
 
 import android.Manifest;
@@ -95,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private Bitmap bmScrambleView;
     private TextView tvStat;    //统计简要
     private TextView tvMulPhase;
+    private boolean smartCubeImmersiveLayoutActive;
     private PopupWindow popupWindow;	//打乱弹出窗口
     private TextAdapter s1Adapter;
     private TextAdapter s2Adapter;
@@ -174,6 +170,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private final List<String> smartCubeScrambleMoves = new ArrayList<>();
     private final List<String> smartCubeScrambleStates = new ArrayList<>();
     private int smartCubeScrambleProgress;
+    private int smartCubeScrambleHiddenPrefix;
     private String smartCubeScramblePendingMove;
     private int smartCubeCorrectionBaseProgress = -1;
     private String smartCubeCorrectionBasePendingMove;
@@ -198,6 +195,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private static final int REQUEST_BLE_PERMISSION = 6;
     private static final int ANDROID_API_S = 31;
     private static final int SMART_CUBE_CORRECTION_LIMIT = 10;
+    private static final int SMART_CUBE_IMMERSIVE_MIN_SW_DP = 720;
+    private static final int SMART_CUBE_IMMERSIVE_SCRAMBLE_OFFSET_DP = 56;
+    private static final int MULTI_PHASE_DEFAULT_TEXT_SIZE_SP = 18;
+    private static final int SMART_CUBE_IMMERSIVE_PHASE_MIN_SP = 18;
+    private static final int SMART_CUBE_IMMERSIVE_PHASE_MAX_SP = 36;
+    private static final float SMART_CUBE_IMMERSIVE_PHASE_TIMER_RATIO = 0.32f;
+    private static final long SMART_CUBE_SOLVED_FINAL_MOVE_DELAY_MS = 140L;
     private static final long SMART_CUBE_RESTORE_HINT_INTERVAL_MS = 5000L;
     private static final String PERMISSION_BLUETOOTH_SCAN = "android.permission.BLUETOOTH_SCAN";
     private static final String PERMISSION_BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT";
@@ -206,7 +210,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private static final int[] ITEMS_ID = {R.array.opt_enter_time, R.array.opt_timer_update, R.array.opt_accuracy, R.array.opt_multi_phase,
             R.array.opt_average, R.array.opt_solve_333, R.array.opt_solve_222, R.array.opt_mega_scheme,
             R.array.opt_timer_font, R.array.opt_screen_ori, R.array.opt_vibrate, R.array.opt_vibrate_time,
-            R.array.opt_sq_solver, R.array.opt_time_format, R.array.opt_average, R.array.opt_gesture, R.array.opt_decimal};
+            R.array.opt_sq_solver, R.array.opt_time_format, R.array.opt_average, R.array.opt_gesture, R.array.opt_decimal,
+            R.array.opt_smart_layout};
 
     private static class SmartCubeSequenceProgress {
         final int progress;
@@ -396,29 +401,43 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Utils.addSection(headers, cells, getString(R.string.title_timer), getResources().getStringArray(R.array.item_timer),
                 new int[] {1, 1, 0, 0, 0, 0, 0, 2, 0, 1, 1, 1, 2},
                 new Object[] {wca, inspectionAlert, itemStr[13][timeFormat], itemStr[16][decimalMark], itemStr[0][enterTime], itemStr[1][timerUpdate], itemStr[2][timerAccuracy], String.format("%.02fs", freezeTime/20f), itemStr[3][multiPhase], simulateSS, showStat, dropToStop, ""},
-                new int[] {0, 0, 0, 0, 0, 0, 0, 20<<16|freezeTime, 0, 0, 0, 0, 95<<16|((int) (sensitivity *100)-5)});
+                new int[] {0, 0, 0, 0, 0, 0, 0, 20<<16|freezeTime, 0, 0, 0, 0, 95<<16|((int) (sensitivity *100)-5)},
+                new int[] {ST_WCA, ST_INSPECTION_ALERT, ST_TIME_FORMAT, ST_DECIMAL_MARK, ST_ENTER_TIME, ST_TIMER_UPDATE, ST_TIMER_ACCURACY, ST_START_DELAY, ST_MULTI_PHASE, ST_SIMULATE_SS, ST_SHOW_STATS, ST_DROP_TO_STOP, ST_SENSITIVITY});
+        Utils.addSection(headers, cells, getString(R.string.title_smart), getResources().getStringArray(R.array.item_smart),
+                new int[] {0, 0, 0},
+                new Object[] {getSmartCubeOrientationLabel(smartCubeSolveOrientation), getResources().getStringArray(R.array.opt_smart_scramble_progress)[smartCubeScrambleProgressStyle],
+                        getResources().getStringArray(R.array.opt_smart_layout)[smartCubeLayoutMode]},
+                new int[3],
+                new int[] {ST_SMART_ORIENTATION, ST_SMART_SCRAMBLE_PROGRESS, ST_SMART_LAYOUT});
         Utils.addSection(headers, cells, getString(R.string.title_scramble), getResources().getStringArray(R.array.item_scramble),
                 new int[] {2, 1, 1, 2, 0},
                 new Object[] {String.valueOf(scrambleSize), monoFont, showImage, "", ""},
-                new int[] {18<<16|(scrambleSize-12), 0, 0, 16<<16|(imageSize/10-16), 0});
+                new int[] {18<<16|(scrambleSize-12), 0, 0, 16<<16|(imageSize/10-16), 0},
+                new int[] {ST_SCR_FONT, ST_MONO_SCRAMBLE, ST_SHOW_SCRAMBLE, ST_IMAGE_SIZE, ST_EG_SCRAMBLE});
         Utils.addSection(headers, cells, getString(R.string.title_stats), getResources().getStringArray(R.array.item_stats),
                 new int[] {1, 0, 0, 0, 0, 1},
                 new Object[] {promptToSave, itemStr[14][avg1Type], String.valueOf(avg1len), itemStr[4][avg2Type], String.valueOf(avg2len), selectSession},
-                new int[6]);
+                new int[6],
+                new int[] {ST_PROMPT_TO_SAVE, ST_AVG1_TYPE, ST_AVG1_LEN, ST_AVG2_TYPE, ST_AVG2_LEN, ST_SELECT_SESSION});
         Utils.addSection(headers, cells, getString(R.string.title_tools), getResources().getStringArray(R.array.item_tools),
-                new int[6], new Object[] {itemStr[5][solve333], itemStr[12][solveSq1], itemStr[6][solve222], ""}, new int[6]);
+                new int[6], new Object[] {itemStr[5][solve333], itemStr[12][solveSq1], itemStr[6][solve222], ""}, new int[6],
+                new int[] {ST_SOLVE_333, ST_SOLVE_SQ1, ST_SOLVE_222, ST_SOLVE_PYR});
         Utils.addSection(headers, cells, getString(R.string.title_scheme), getResources().getStringArray(R.array.item_scheme),
-                new int[5], new Object[] {"", "", "", "", itemStr[7][megaColorScheme]}, new int[5]);
+                new int[5], new Object[] {"", "", "", "", itemStr[7][megaColorScheme]}, new int[5],
+                new int[] {ST_SCHEME_NNN, ST_SCHEME_PYR, ST_SCHEME_SQ1, ST_SCHEME_SKEWB, ST_MEGA_SCHEME});
         Utils.addSection(headers, cells, getString(R.string.title_interface), getResources().getStringArray(R.array.item_interface),
                 new int[] {0, 2, 0, 0, 0, 1, 2, 0, 0, 0},
                 new Object[] {itemStr[8][timerFont], String.valueOf(timerSize), "", "", "", !useBgcolor, "", "", "", ""},
-                new int[] {0, 70<<16|(timerSize-50), 0, 0, 0, 0, 80<<16|(opacity-20), 0, 0, 0, 0});
+                new int[] {0, 70<<16|(timerSize-50), 0, 0, 0, 0, 80<<16|(opacity-20), 0, 0, 0, 0},
+                new int[] {ST_TIMER_FONT, ST_TIMER_SIZE, ST_BACKGROUND_COLOR, ST_TEXT_COLOR, ST_BACKGROUND_IMAGE, ST_SHOW_BACKGROUND_IMAGE, ST_OPACITY, ST_BEST_TIME_COLOR, ST_WORST_TIME_COLOR, ST_BEST_AVERAGE_COLOR});
         Utils.addSection(headers, cells, getString(R.string.title_gesture), getResources().getStringArray(R.array.item_gesture),
-                new int[4], new Object[] {itemStr[15][swipeType[0]], itemStr[15][swipeType[1]], itemStr[15][swipeType[2]], itemStr[15][swipeType[3]]}, new int[4]);
+                new int[4], new Object[] {itemStr[15][swipeType[0]], itemStr[15][swipeType[1]], itemStr[15][swipeType[2]], itemStr[15][swipeType[3]]}, new int[4],
+                new int[] {ST_GESTURE_LEFT, ST_GESTURE_RIGHT, ST_GESTURE_UP, ST_GESTURE_DOWN});
         Utils.addSection(headers, cells, getString(R.string.title_hardware), getResources().getStringArray(R.array.item_hardware),
                 new int[] {1, 0, 0, 0},
                 new Object[] {screenOn, itemStr[10][vibrateType], itemStr[11][vibrateTime], itemStr[9][screenOri]},
-                new int[4]);
+                new int[4],
+                new int[] {ST_SCREEN_ON, ST_VIBRATE, ST_VIBRATE_TIME, ST_SCREEN_ORIENTATION});
         //Log.w("dct", ""+cells.size());
         stAdapter = new SettingAdapter(this, headers, cells);
         rvSetting = findViewById(R.id.lv_settings);
@@ -1292,8 +1311,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setPref("wcainsp", false);
         }
         if (stAdapter != null) {
-            stAdapter.setCheck(1, false);
-            stAdapter.setCheck(2, false);
+            stAdapter.setCheck(ST_WCA, false);
+            stAdapter.setCheck(ST_INSPECTION_ALERT, false);
         }
         if (showToast) {
             Toast.makeText(context, R.string.smart_timer_wca_disabled, Toast.LENGTH_SHORT).show();
@@ -1354,6 +1373,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void clearSmartCubeScrambleCache() {
         smartCubeScrambleCache = "";
         smartCubeScrambleProgress = 0;
+        smartCubeScrambleHiddenPrefix = 0;
         smartCubeScramblePendingMove = null;
         smartCubeScrambleMoves.clear();
         smartCubeScrambleStates.clear();
@@ -1419,11 +1439,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (progressInfo != null) {
             smartCubeScrambleProgress = progressInfo.progress;
             smartCubeScramblePendingMove = progressInfo.pendingMove;
+            if (smartCubeScrambleProgress == 0) {
+                smartCubeScrambleHiddenPrefix = 0;
+            }
             clearSmartCubeCorrectionSuggestion();
             return;
         }
         if (Utils.isSolvedIgnoringRotation(cubeState) || SOLVED_FACELET.equals(cubeState)) {
             smartCubeScrambleProgress = 0;
+            smartCubeScrambleHiddenPrefix = 0;
             smartCubeScramblePendingMove = null;
             clearSmartCubeCorrectionSuggestion();
             return;
@@ -1487,6 +1511,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return correctionBuilder;
         }
         SpannableStringBuilder builder = new SpannableStringBuilder();
+        if (smartCubeScrambleProgressStyle == 1) {
+            int doneColor = 0xffaaaaaa;
+            int displayStart = Math.max(0, Math.min(smartCubeScrambleHiddenPrefix, smartCubeScrambleMoves.size()));
+            for (int i = displayStart; i < smartCubeScrambleMoves.size(); i++) {
+                if (builder.length() > 0) builder.append(' ');
+                int start = builder.length();
+                builder.append(smartCubeScrambleMoves.get(i));
+                int end = builder.length();
+                int spanColor;
+                if (i < smartCubeScrambleProgress) {
+                    spanColor = doneColor;
+                } else if (i == smartCubeScrambleProgress && smartCubeScrambleProgress < smartCubeScrambleMoves.size()) {
+                    spanColor = nextColor;
+                } else {
+                    spanColor = baseColor;
+                }
+                builder.setSpan(new ForegroundColorSpan(spanColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            return builder;
+        }
         int startIndex = Math.max(0, smartCubeScrambleProgress);
         if (!TextUtils.isEmpty(smartCubeScramblePendingMove) && startIndex < smartCubeScrambleMoves.size()) {
             if (builder.length() > 0) builder.append(' ');
@@ -1520,6 +1564,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (smartCubeCorrectionBaseProgress < 0) {
             smartCubeCorrectionBaseProgress = Math.max(0, smartCubeScrambleProgress);
             smartCubeCorrectionBasePendingMove = smartCubeScramblePendingMove;
+            if (smartCubeScrambleProgressStyle == 1) {
+                smartCubeScrambleHiddenPrefix = Math.max(smartCubeScrambleHiddenPrefix, smartCubeCorrectionBaseProgress);
+            }
         }
         appendCombinedMove(smartCubeDeviationMoves, moveText);
         rebuildSmartCubeCorrectionMoves();
@@ -1750,7 +1797,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             btnLeft.setVisibility(View.GONE);
             btnRight.setVisibility(View.GONE);
         }
-        if (!TextUtils.equals(tvScramble.getText(), nextText)) {
+        if (nextText instanceof Spanned || !TextUtils.equals(tvScramble.getText(), nextText)) {
             tvScramble.setText(nextText);
         }
     }
@@ -1870,7 +1917,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         enterTime = 0;
         bleDeviceType = BLEDevice.TYPE_UNKNOWN;
         if (stAdapter != null) {
-            stAdapter.setText(5, itemStr[0][enterTime]);
+            stAdapter.setText(ST_ENTER_TIME, itemStr[0][enterTime]);
         }
         setPref("tiway", enterTime);
         setTimerColor(APP.getTextColor());
@@ -2022,7 +2069,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         public void onSolved(final SmartCube cube) {
             if (timer.getTimerState() == DCTTimer.RUNNING) {
                 cube.calcResult();
-                cube.markSolved();
+                final int timeRes = cube.getResult();
+                final int moveCount = cube.getReconstructedMovesCount();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -2030,16 +2078,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         timer.count();
                         setVisibility(true);
                         int localTime = (int) timer.time;
-                        int timeRes = cube.getResult();
                         Log.w("dct", "smart cube solved local=" + localTime
                                 + " device=" + timeRes
                                 + " delta=" + (localTime - timeRes));
-                        int moveCount = cube.getReconstructedMovesCount();
                         tvMulPhase.setText(String.format(Locale.getDefault(), "%d moves\n%.1f tps", moveCount, timeRes > 0 ? moveCount * 1000f / timeRes : 0f));
                         Log.w("dct", "成绩 "+timeRes);
                         if (!wca || currentScramble.isBlindfoldScramble()) { penaltyTime = 0; isDNF = false;}
                         timer.setTimerState(DCTTimer.READY);
-                        saveSmartCubeTime(timeRes, cube);
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                cube.markSolved();
+                                saveSmartCubeTime(timeRes, cube);
+                            }
+                        }, SMART_CUBE_SOLVED_FINAL_MOVE_DELAY_MS);
                     }
                 });
             }
@@ -2525,6 +2577,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         if (enterTime == i) return;
+                        boolean wasSmartCubeMode = isSmartCubeMode();
                         enterTime = i;
                         stAdapter.setText(position, itemStr[0][i]);
                         if (i < 2) {
@@ -2558,6 +2611,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                                 Toast.makeText(context, R.string.smart_timer_wca_auto_disabled, Toast.LENGTH_SHORT).show();
                             }
                             startBleScanFlow();
+                        }
+                        if (wasSmartCubeMode && !isSmartCubeMode()) {
+                            hideTimerPageCubeState();
+                            showScrambleView();
                         }
                         //else
                         setPref("tiway", i);
@@ -2638,13 +2695,52 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 stAdapter.setCheck(position, dropToStop);
                 setPref("drop", dropToStop);
                 break;
-            case 16:    //等宽打乱字体
+            case ST_SMART_ORIENTATION:
+                new AlertDialog.Builder(context).setSingleChoiceItems(getSmartCubeOrientationLabels(), smartCubeSolveOrientation, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if (smartCubeSolveOrientation == i) return;
+                        smartCubeSolveOrientation = i;
+                        stAdapter.setText(position, getSmartCubeOrientationLabel(i));
+                        setPref("scori", i);
+                        dialogInterface.dismiss();
+                    }
+                }).setNegativeButton(R.string.btn_cancel, null).show();
+                break;
+            case ST_SMART_SCRAMBLE_PROGRESS:
+                new AlertDialog.Builder(context).setSingleChoiceItems(R.array.opt_smart_scramble_progress, smartCubeScrambleProgressStyle, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if (smartCubeScrambleProgressStyle == i) return;
+                        smartCubeScrambleProgressStyle = i;
+                        stAdapter.setText(position, getResources().getStringArray(R.array.opt_smart_scramble_progress)[i]);
+                        setPref("scadv", i);
+                        dialogInterface.dismiss();
+                    }
+                }).setNegativeButton(R.string.btn_cancel, null).show();
+                break;
+            case ST_SMART_LAYOUT:
+                new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[17], smartCubeLayoutMode, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if (smartCubeLayoutMode == i) return;
+                        smartCubeLayoutMode = i;
+                        stAdapter.setText(position, itemStr[17][i]);
+                        setPref("sclayout", i);
+                        if (shouldShowTimerPageCubeState()) {
+                            setSmartCubeImageSize();
+                        }
+                        dialogInterface.dismiss();
+                    }
+                }).setNegativeButton(R.string.btn_cancel, null).show();
+                break;
+            case 20:    //等宽打乱字体
                 monoFont = !monoFont;
                 stAdapter.setCheck(position, monoFont);
                 setPref("monoscr", monoFont);
                 setScrambleFont();
                 break;
-            case 17:    //显示打乱状态
+            case 21:    //显示打乱状态
                 showImage = !showImage;
                 stAdapter.setCheck(position, showImage);
                 setPref("showscr", showImage);
@@ -2655,7 +2751,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     hideTimerPageCubeState();
                 }
                 break;
-            case 19:    //EG打乱
+            case 23:    //EG打乱
                 new AlertDialog.Builder(context).setMultiChoiceItems(R.array.opt_eg_scramble, egIdx, new DialogInterface.OnMultiChoiceClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i, boolean b) {
@@ -2671,12 +2767,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_close, null).show();
                 break;
-            case 21:    //确认时间
+            case 25:    //确认时间
                 promptToSave = !promptToSave;
                 stAdapter.setCheck(position, promptToSave);
                 setPref("conft", promptToSave);
                 break;
-            case 22:	//滚动平均1类型
+            case 26:	//滚动平均1类型
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[14], avg1Type, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -2702,7 +2798,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 24:    //滚动平均2类型
+            case 28:    //滚动平均2类型
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[4], avg2Type, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -2728,13 +2824,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 23:    //平均1长度
-            case 25:    //平均2长度
+            case 27:    //平均1长度
+            case 29:    //平均2长度
                 LayoutInflater factory = LayoutInflater.from(context);
                 int layoutId = R.layout.dialog_input;
                 view = factory.inflate(layoutId, null);
                 editText = view.findViewById(R.id.edit_text);
-                editText.setText(String.valueOf(position==23 ? avg1len : avg2len));
+                editText.setText(String.valueOf(position==27 ? avg1len : avg2len));
                 editText.setSelection(editText.getText().length());
                 new AlertDialog.Builder(context).setTitle(R.string.enter_length).setView(view)
                         .setPositiveButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
@@ -2747,7 +2843,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                                     Toast.makeText(context, getString(R.string.invalid_input), Toast.LENGTH_LONG).show();
                                     return;
                                 }
-                                if (position == 23) {
+                                if (position == 27) {
                                     avg1len = len;
                                     setPref("l1len", len);
                                 } else {
@@ -2776,15 +2872,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).show();
                 Utils.showKeyboard(editText);
                 break;
-            case 26:	//自动选择分组
+            case 30:	//自动选择分组
                 selectSession = !selectSession;
                 stAdapter.setCheck(position, selectSession);
                 setPref("selses", selectSession);
                 break;
-            case 28:    //三阶求解
+            case 32:    //三阶求解
                 Cube333SolverDialog.newInstance(position).show(getSupportFragmentManager(), "333Solver");
                 break;
-            case 29:    //SQ1复形
+            case 33:    //SQ1复形
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[12], solveSq1, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -2818,10 +2914,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 30:    //二阶求解
+            case 34:    //二阶求解
                 Cube222SolverDialog.newInstance(position).show(getSupportFragmentManager(), "222Solver");
                 break;
-            case 31:    //Pyraminx V求解
+            case 35:    //Pyraminx V求解
                 final boolean[] chks = new boolean[4];
                 for (int i=0; i<4; i++)
                     chks[i] = (((solvePyr >> i) & 1) != 0);
@@ -2858,7 +2954,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).setNegativeButton(R.string.btn_close, null).show();
                 break;
             //配色设置
-            case 33:    //n阶
+            case 37:    //n阶
                 int[] cs = {sp.getInt("csn1", Color.YELLOW), sp.getInt("csn2", Color.BLUE), sp.getInt("csn3", Color.RED),
                         sp.getInt("csn4", Color.WHITE), sp.getInt("csn5", 0xff009900), sp.getInt("csn6", 0xffff9900)};
                 colorSchemeView = new ColorSchemeView(this, APP.getPixel(290), cs, 1);
@@ -2880,7 +2976,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 });
                 break;
-            case 34:    //金字塔
+            case 38:    //金字塔
                 cs = new int[] {sp.getInt("csp1", Color.RED), sp.getInt("csp2", 0xff009900),
                         sp.getInt("csp3", Color.BLUE), sp.getInt("csp4", Color.YELLOW)};
                 colorSchemeView = new ColorSchemeView(this, (int) (dpi * 290), cs, 2);
@@ -2900,7 +2996,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 });
                 break;
-            case 35:    //SQ1
+            case 39:    //SQ1
                 cs = new int[] {sp.getInt("csq1", Color.WHITE), sp.getInt("csq2", 0xffff9900), sp.getInt("csq3", 0xff009900),
                         sp.getInt("csq4", Color.YELLOW), sp.getInt("csq5", Color.RED), sp.getInt("csq6", Color.BLUE)};
                 colorSchemeView = new ColorSchemeView(this, (int) (dpi * 290), cs, 3);
@@ -2920,7 +3016,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 });
                 break;
-            case 36:    //skewb
+            case 40:    //skewb
                 cs = new int[] {sp.getInt("csw1", Color.YELLOW), sp.getInt("csw2", Color.BLUE), sp.getInt("csw3", Color.RED),
                         sp.getInt("csw4", Color.WHITE), sp.getInt("csw5", 0xff009900), sp.getInt("csw6", 0xffff9900)};
                 colorSchemeView = new ColorSchemeView(this, (int) (dpi * 290), cs, 4);
@@ -2940,7 +3036,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 });
                 break;
-            case 37:    //五魔
+            case 41:    //五魔
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[7], megaColorScheme, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -2953,7 +3049,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
             //界面设置
-            case 39:    //计时器字体
+            case 43:    //计时器字体
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[8], timerFont, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -2966,7 +3062,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 41:    //背景颜色
+            case 45:    //背景颜色
                 AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(context);
                 View dialogLayout = LayoutInflater.from(context).inflate(R.layout.dialog_color_picker, null);
                 RadioGroup rgMode = dialogLayout.findViewById(R.id.rg_mode);
@@ -3067,7 +3163,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 });
                 dialogBuilder.show();
                 break;
-            case 42:    //文字颜色
+            case 46:    //文字颜色
                 new ColorPickerDialog(context, new int[] {colors[1], colors[6]}, new int[] {-1, -1}, false, new OnColorPickerListener() {
                     @Override
                     public void onColorCancel(ColorPickerDialog dialog) { }
@@ -3098,10 +3194,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).show();
                 break;
-            case 43:    //背景图片
+            case 47:    //背景图片
                 selectPic();
                 break;
-            case 44:    //显示背景图
+            case 48:    //显示背景图
                 if (useBgcolor) {
                     setBackground();
                 } else setBackgroundColor();
@@ -3110,7 +3206,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 stAdapter.setCheck(position, !useBgcolor);
                 setPref("bgcolor", useBgcolor);
                 break;
-            case 46:    //最快单次颜色
+            case 50:    //最快单次颜色
                 new ColorPickerDialog(context, new int[] {colors[2]}, new int[] {0xffff00ff}, true, new OnColorPickerListener() {
                     @Override
                     public void onColorCancel(ColorPickerDialog dialog) { }
@@ -3134,7 +3230,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).show();
                 break;
-            case 47:    //最慢单次颜色
+            case 51:    //最慢单次颜色
                 new ColorPickerDialog(context, new int[] {colors[3]}, new int[] {0xffee3333}, true, new OnColorPickerListener() {
                     @Override
                     public void onColorCancel(ColorPickerDialog dialog) { }
@@ -3158,7 +3254,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).show();
                 break;
-            case 48:    //最快平均颜色
+            case 52:    //最快平均颜色
                 new ColorPickerDialog(context, new int[] {colors[4]}, new int[] {0xff009900}, true, new OnColorPickerListener() {
                     @Override
                     public void onColorCancel(ColorPickerDialog dialog) { }
@@ -3183,7 +3279,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).show();
                 break;
             //手势管理
-            case 50:    //左
+            case 54:    //左
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[15], swipeType[0], new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3195,7 +3291,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 51:    //右
+            case 55:    //右
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[15], swipeType[1], new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3207,7 +3303,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 52:    //上
+            case 56:    //上
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[15], swipeType[2], new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3219,7 +3315,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 53:    //下
+            case 57:    //下
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[15], swipeType[3], new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3232,7 +3328,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
             //硬件设置
-            case 55:    //屏幕常亮
+            case 59:    //屏幕常亮
                 if (screenOn) {
                     if (timer.getTimerState() != 1) releaseWakeLock();
                 } else acquireWakeLock();
@@ -3240,7 +3336,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 stAdapter.setCheck(position, screenOn);
                 setPref("scron", screenOn);
                 break;
-            case 56:    //触感反馈
+            case 60:    //触感反馈
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[10], vibrateType, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3252,7 +3348,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 57:    //触感时间
+            case 61:    //触感时间
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[11], vibrateTime, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3264,7 +3360,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 58:    //屏幕方向
+            case 62:    //屏幕方向
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[9], screenOri, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3453,6 +3549,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         stAdapter.setText(position, text);
     }
 
+    public String getSmartCubeOrientationLabel(int orientationIndex) {
+        String[] faces = getResources().getStringArray(R.array.opt_smart_cube_faces);
+        int[] pair = Utils.getSmartCubeOrientationPair(orientationIndex);
+        return getString(R.string.smart_cube_orientation_format, faces[pair[0]], faces[pair[1]]);
+    }
+
+    private String[] getSmartCubeOrientationLabels() {
+        String[] labels = new String[Utils.SMART_CUBE_ORIENTATION_FACES.length];
+        for (int i = 0; i < labels.length; i++) {
+            labels[i] = getSmartCubeOrientationLabel(i);
+        }
+        return labels;
+    }
+
     public void updatePref(int position, int progress) {
         switch (position) {
             case ST_START_DELAY: //启动延时
@@ -3491,7 +3601,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    public void updatePref(int position, String detail) {
+    public void updatePref(int settingId, String detail) {
+        int position = stAdapter.getPositionBySettingId(settingId);
+        if (position < 0) return;
         View v = rvSetting.getLayoutManager().findViewByPosition(position);
         if (v == null) {
             //Log.e("dct", "view为null");
@@ -3733,10 +3845,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             btnLeft.setVisibility(vi);
             btnRight.setVisibility(vi);
         }
-        toolbar.setVisibility(vi);
+        toolbar.setVisibility(!v && shouldPreserveSmartCubeImmersiveLayoutSpace() ? View.INVISIBLE : vi);
         if (shouldShowTimerPageCubeState()) {
             scrambleView.setVisibility(View.GONE);
             if (smartCube3DView != null) {
+                smartCube3DView.setAlpha(1f);
                 smartCube3DView.setVisibility(View.VISIBLE);
             }
         } else if (showImage) {
@@ -3764,7 +3877,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         toolbar.setAlpha(alpha);
         scrambleView.setAlpha(alpha);
         if (smartCube3DView != null) {
-            smartCube3DView.setAlpha(alpha);
+            smartCube3DView.setAlpha(active && shouldShowTimerPageCubeState() ? 1f : alpha);
         }
         tvMulPhase.setAlpha(alpha);
         if (tvTest != null) {
@@ -3775,6 +3888,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void clearReadyHoldUiState() {
         setReadyHoldUi(false);
+    }
+
+    private boolean shouldPreserveSmartCubeImmersiveLayoutSpace() {
+        return shouldUseSmartCubeImmersiveLayout();
     }
 
     public void setBackgroundColor() {
@@ -3835,6 +3952,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void setTimerSize() {
         tvTimer.setTextSize(timerSize);
+        if (smartCubeImmersiveLayoutActive) {
+            applySmartCubeImmersivePhaseTextSize();
+        }
     }
 
     public void updateTime() {
@@ -3888,6 +4008,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     public void setImageSize() {    //设置打乱图大小
+        applySmartCubeImmersiveLayout(false);
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int) (imageSize * dpi), (int) (imageSize * 3 * dpi) / 4);
         params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
@@ -3896,6 +4017,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void setSmartCubeImageSize() {
+        if (shouldUseSmartCubeImmersiveLayout()) {
+            applySmartCubeImmersiveLayout(true);
+            return;
+        }
+        applySmartCubeImmersiveLayout(false);
         int width = (int) (imageSize * dpi * 0.78f);
         int height = (int) (imageSize * dpi * 0.86f);
         int bottomMargin = APP.getPixel(5);
@@ -3920,6 +4046,85 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         params.setMargins(0, 0, 0, bottomMargin);
         return params;
+    }
+
+    private boolean shouldUseSmartCubeImmersiveLayout() {
+        return smartCubeLayoutMode == 1
+                && getResources().getConfiguration().smallestScreenWidthDp >= SMART_CUBE_IMMERSIVE_MIN_SW_DP
+                && shouldShowTimerPageCubeState();
+    }
+
+    private void applySmartCubeImmersiveLayout(boolean active) {
+        if (active) {
+            View parent = scrambleView.getParent() instanceof View ? (View) scrambleView.getParent() : frame;
+            int parentWidth = parent != null && parent.getWidth() > 0 ? parent.getWidth() : dm.widthPixels;
+            int parentHeight = parent != null && parent.getHeight() > 0 ? parent.getHeight() : dm.heightPixels;
+            int rightMargin = Math.max(APP.getPixel(64), parentWidth / 14);
+            int sideWidth = Math.min(Math.max(APP.getPixel(260), parentWidth / 4), APP.getPixel(420));
+            int availableCubeWidth = Math.max(APP.getPixel(220), parentWidth - sideWidth - rightMargin - APP.getPixel(96));
+            int cubeHeight = Math.min((int) (parentHeight * 0.56f), (int) (availableCubeWidth * 0.86f));
+            cubeHeight = Math.max(APP.getPixel(260), cubeHeight);
+            int cubeWidth = (int) (cubeHeight * 0.88f);
+            RelativeLayout.LayoutParams previewParams = new RelativeLayout.LayoutParams(cubeWidth, cubeHeight);
+            previewParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+            if (smartCube3DView != null) {
+                smartCube3DView.setLayoutParams(previewParams);
+            }
+            scrambleView.setLayoutParams(new RelativeLayout.LayoutParams(previewParams));
+            tvScramble.setTranslationY(-APP.getPixel(SMART_CUBE_IMMERSIVE_SCRAMBLE_OFFSET_DP));
+
+            RelativeLayout.LayoutParams timerParams = new RelativeLayout.LayoutParams(sideWidth, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            timerParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            timerParams.addRule(RelativeLayout.CENTER_VERTICAL);
+            timerParams.setMargins(0, 0, rightMargin, 0);
+            tvTimer.setLayoutParams(timerParams);
+            tvTimer.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+            setTextAlignmentCompat(tvTimer, View.TEXT_ALIGNMENT_VIEW_END);
+
+            RelativeLayout.LayoutParams phaseParams = new RelativeLayout.LayoutParams(sideWidth, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            phaseParams.addRule(RelativeLayout.BELOW, R.id.tv_timer);
+            phaseParams.addRule(RelativeLayout.ALIGN_RIGHT, R.id.tv_timer);
+            phaseParams.setMargins(0, APP.getPixel(12), 0, 0);
+            tvMulPhase.setLayoutParams(phaseParams);
+            tvMulPhase.setGravity(Gravity.RIGHT);
+            setTextAlignmentCompat(tvMulPhase, View.TEXT_ALIGNMENT_VIEW_END);
+            applySmartCubeImmersivePhaseTextSize();
+            smartCubeImmersiveLayoutActive = true;
+            return;
+        }
+        if (!smartCubeImmersiveLayoutActive) {
+            return;
+        }
+        tvScramble.setTranslationY(0f);
+        RelativeLayout.LayoutParams timerParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        tvTimer.setLayoutParams(timerParams);
+        tvTimer.setGravity(Gravity.CENTER);
+        setTextAlignmentCompat(tvTimer, View.TEXT_ALIGNMENT_CENTER);
+
+        RelativeLayout.LayoutParams phaseParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        phaseParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        phaseParams.addRule(RelativeLayout.CENTER_VERTICAL);
+        phaseParams.setMargins(0, 0, APP.getPixel(5), 0);
+        tvMulPhase.setLayoutParams(phaseParams);
+        tvMulPhase.setGravity(Gravity.RIGHT);
+        setTextAlignmentCompat(tvMulPhase, View.TEXT_ALIGNMENT_VIEW_END);
+        tvMulPhase.setTextSize(MULTI_PHASE_DEFAULT_TEXT_SIZE_SP);
+        smartCubeImmersiveLayoutActive = false;
+    }
+
+    private void applySmartCubeImmersivePhaseTextSize() {
+        int phaseTextSize = Math.round(timerSize * SMART_CUBE_IMMERSIVE_PHASE_TIMER_RATIO);
+        phaseTextSize = Math.max(SMART_CUBE_IMMERSIVE_PHASE_MIN_SP,
+                Math.min(SMART_CUBE_IMMERSIVE_PHASE_MAX_SP, phaseTextSize));
+        tvMulPhase.setTextSize(phaseTextSize);
+    }
+
+    private void setTextAlignmentCompat(TextView view, int textAlignment) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            view.setTextAlignment(textAlignment);
+        }
     }
 
     private void showTimerPageCubeState(String cubeState) {
@@ -3953,6 +4158,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void hideTimerPageCubeState() {
+        applySmartCubeImmersiveLayout(false);
         if (smartCube3DView != null) {
             smartCube3DView.setVisibility(View.GONE);
         }
@@ -4178,7 +4384,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int mp = sessionManager.getMultiPhase(sessionIdx);
         if (mp != multiPhase) {
             multiPhase = mp;
-            stAdapter.setText(9, itemStr[3][mp]);
+            stAdapter.setText(ST_MULTI_PHASE, itemStr[3][mp]);
             tvMulPhase.setText("");
             setPref("multp", mp);
             setResultTitle();
@@ -4192,10 +4398,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             avg1len = (avg / 2000) % 1000 + 1;
             avg1Type = avg / 2000 / 1000;
             //Log.w("dct", avg1Type+"/"+avg1len+", "+avg2Type+"/"+avg2len);
-            stAdapter.setText(22, itemStr[14][avg1Type]);
-            stAdapter.setText(23, String.valueOf(avg1len));
-            stAdapter.setText(24, itemStr[4][avg2Type]);
-            stAdapter.setText(25, String.valueOf(avg2len));
+            stAdapter.setText(ST_AVG1_TYPE, itemStr[14][avg1Type]);
+            stAdapter.setText(ST_AVG1_LEN, String.valueOf(avg1len));
+            stAdapter.setText(ST_AVG2_TYPE, itemStr[4][avg2Type]);
+            stAdapter.setText(ST_AVG2_LEN, String.valueOf(avg2len));
             setPref("l1tp", avg1Type);
             setPref("l2tp", avg2Type);
             setPref("l1len", avg1len);

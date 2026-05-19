@@ -312,12 +312,37 @@
         <item>灵敏度</item>
     </array>
 
+    <array name="item_smart">
+        <item>解法字段生成基准</item>
+        <item>打乱推进样式</item>
+        <item>布局</item>
+    </array>
+
     <array name="item_scramble">
         <item>打乱字体大小</item>
         <item>使用等宽打乱字体</item>
         <item>显示打乱后的状态</item>
         <item>打乱状态大小</item>
         <item>EG训练打乱</item>
+    </array>
+
+    <array name="opt_smart_cube_faces">
+        <item>白</item>
+        <item>红</item>
+        <item>绿</item>
+        <item>黄</item>
+        <item>橙</item>
+        <item>蓝</item>
+    </array>
+
+    <array name="opt_smart_scramble_progress">
+        <item>已推进自动消失</item>
+        <item>已推进变浅保留</item>
+    </array>
+
+    <array name="opt_smart_layout">
+        <item>默认</item>
+        <item>沉浸式（适用于10寸及以上大屏设备）</item>
     </array>
 
     <array name="item_stats">
