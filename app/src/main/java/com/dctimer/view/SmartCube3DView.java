@@ -200,7 +200,10 @@ public class SmartCube3DView extends GLSurfaceView {
         private static final float FACE_DISTANCE = 1.5f;
         private static final float CELL_HALF = 0.505f;
         private static final float STICKER_HALF = 0.415f;
+        private static final float CELL_CORNER_RADIUS = 0.045f;
+        private static final float STICKER_CORNER_RADIUS = 0.075f;
         private static final float STICKER_Z_OFFSET = 0.032f;
+        private static final int CORNER_SEGMENTS = 5;
         private static final float MAX_VIEW_PITCH = 115f;
         private static final String VERTEX_SHADER =
                 "uniform mat4 uMvpMatrix;" +
@@ -222,7 +225,7 @@ public class SmartCube3DView extends GLSurfaceView {
         private final float[] modelMatrix = new float[16];
         private final float[] vpMatrix = new float[16];
         private final float[] mvpMatrix = new float[16];
-        private final float[] quad = new float[18];
+        private final float[] roundedQuad = new float[(1 + CORNER_SEGMENTS * 4 + 1) * 3];
         private String cubeState = SOLVED_FACELET;
         private String animationStartState;
         private String animationEndState;
@@ -325,11 +328,12 @@ public class SmartCube3DView extends GLSurfaceView {
                 Transform transform = buildTransform(facelet, moveSpec, moveProgress);
                 int baseColor = shadeColor(0xff111111, transform.normal, 0.42f);
                 int stickerColor = shadeColor(faceColor(state.charAt(i)), transform.normal, 0.86f);
-                drawQuad(transform.center, transform.u, transform.v, transform.normal, CELL_HALF, baseColor);
+                drawRoundedQuad(transform.center, transform.u, transform.v, transform.normal,
+                        CELL_HALF, CELL_CORNER_RADIUS, baseColor);
                 GLES20.glEnable(GLES20.GL_POLYGON_OFFSET_FILL);
                 GLES20.glPolygonOffset(-1f, -1f);
-                drawQuad(transform.center.add(transform.normal.scale(STICKER_Z_OFFSET)), transform.u, transform.v,
-                        transform.normal, STICKER_HALF, stickerColor);
+                drawRoundedQuad(transform.center.add(transform.normal.scale(STICKER_Z_OFFSET)), transform.u, transform.v,
+                        transform.normal, STICKER_HALF, STICKER_CORNER_RADIUS, stickerColor);
                 GLES20.glDisable(GLES20.GL_POLYGON_OFFSET_FILL);
             }
         }
@@ -349,35 +353,53 @@ public class SmartCube3DView extends GLSurfaceView {
             return new Transform(center, normal.normalize(), u.normalize(), v.normalize());
         }
 
-        private void drawQuad(Vec3 center, Vec3 u, Vec3 v, Vec3 normal, float halfSize, int color) {
-            Vec3 p0 = center.add(u.scale(-halfSize)).add(v.scale(-halfSize));
-            Vec3 p1 = center.add(u.scale(halfSize)).add(v.scale(-halfSize));
-            Vec3 p2 = center.add(u.scale(halfSize)).add(v.scale(halfSize));
-            Vec3 p3 = center.add(u.scale(-halfSize)).add(v.scale(halfSize));
-            putTriangle(p0, p1, p2, 0);
-            putTriangle(p0, p2, p3, 9);
-            FloatBuffer buffer = ByteBuffer.allocateDirect(quad.length * 4)
+        private void drawRoundedQuad(Vec3 center, Vec3 u, Vec3 v, Vec3 normal,
+                                     float halfSize, float cornerRadius, int color) {
+            int vertexCount = putRoundedQuad(center, u, v, halfSize, cornerRadius);
+            FloatBuffer buffer = ByteBuffer.allocateDirect(vertexCount * 3 * 4)
                     .order(ByteOrder.nativeOrder())
                     .asFloatBuffer();
-            buffer.put(quad);
+            buffer.put(roundedQuad, 0, vertexCount * 3);
             buffer.position(0);
             GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 0, buffer);
             GLES20.glEnableVertexAttribArray(positionHandle);
             setColorUniform(color, normal);
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, vertexCount);
             GLES20.glDisableVertexAttribArray(positionHandle);
         }
 
-        private void putTriangle(Vec3 p0, Vec3 p1, Vec3 p2, int offset) {
-            putPoint(p0, offset);
-            putPoint(p1, offset + 3);
-            putPoint(p2, offset + 6);
+        private int putRoundedQuad(Vec3 center, Vec3 u, Vec3 v, float halfSize, float cornerRadius) {
+            putPoint(center, 0);
+            int vertexIndex = 1;
+            float radius = Math.max(0f, Math.min(cornerRadius, halfSize));
+            float inner = halfSize - radius;
+            vertexIndex = putCorner(center, u, v, inner, -inner, radius, -90f, 0f, vertexIndex);
+            vertexIndex = putCorner(center, u, v, inner, inner, radius, 0f, 90f, vertexIndex);
+            vertexIndex = putCorner(center, u, v, -inner, inner, radius, 90f, 180f, vertexIndex);
+            vertexIndex = putCorner(center, u, v, -inner, -inner, radius, 180f, 270f, vertexIndex);
+            roundedQuad[vertexIndex * 3] = roundedQuad[3];
+            roundedQuad[vertexIndex * 3 + 1] = roundedQuad[4];
+            roundedQuad[vertexIndex * 3 + 2] = roundedQuad[5];
+            return vertexIndex + 1;
+        }
+
+        private int putCorner(Vec3 center, Vec3 u, Vec3 v, float cornerX, float cornerY,
+                              float radius, float startDegrees, float endDegrees, int vertexIndex) {
+            for (int i = 0; i < CORNER_SEGMENTS; i++) {
+                float t = CORNER_SEGMENTS == 1 ? 0f : (float) i / (float) (CORNER_SEGMENTS - 1);
+                float angle = (float) Math.toRadians(startDegrees + (endDegrees - startDegrees) * t);
+                float localX = cornerX + (float) Math.cos(angle) * radius;
+                float localY = cornerY + (float) Math.sin(angle) * radius;
+                putPoint(center.add(u.scale(localX)).add(v.scale(localY)), vertexIndex * 3);
+                vertexIndex++;
+            }
+            return vertexIndex;
         }
 
         private void putPoint(Vec3 point, int offset) {
-            quad[offset] = point.x;
-            quad[offset + 1] = point.y;
-            quad[offset + 2] = point.z;
+            roundedQuad[offset] = point.x;
+            roundedQuad[offset + 1] = point.y;
+            roundedQuad[offset + 2] = point.z;
         }
 
         private void setColorUniform(int color, Vec3 normal) {
