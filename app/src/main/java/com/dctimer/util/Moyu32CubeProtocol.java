@@ -211,7 +211,7 @@ public class Moyu32CubeProtocol implements SmartCubeProtocol {
             context.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    context.showCubeStateDialog();
+                    context.onSmartCubeReady();
                 }
             });
         }

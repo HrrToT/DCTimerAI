@@ -54,6 +54,10 @@
             android:name=".activity.WebActivity"
             android:configChanges="orientation|keyboardHidden|screenSize|uiMode" />
         <activity
+            android:name=".activity.SmartCubeLogoCropActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|uiMode"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".activity.GraphActivity"
             android:configChanges="orientation|keyboardHidden|screenSize|uiMode" />
         <activity

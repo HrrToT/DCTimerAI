@@ -316,6 +316,11 @@
         <item>解法字段生成基准</item>
         <item>打乱推进样式</item>
         <item>布局</item>
+        <item>自动弹出连接窗口</item>
+        <item>点击计时区域时打开连接窗口</item>
+        <item>连接后自动姿态重置（白顶绿前）</item>
+        <item>重置魔方为复原态</item>
+        <item>白色中心块 Logo</item>
     </array>
 
     <array name="item_scramble">
@@ -461,5 +466,12 @@
         <item>顺时针转90度</item>
         <item>转180度</item>
         <item>逆时针转90度</item>
+    </array>
+    <array name="item_smart_mode">
+        <item>自动弹出连接窗口</item>
+        <item>点击计时区时打开连接窗口</item>
+        <item>连接后自动姿态重置（白顶绿前）</item>
+        <item>重置魔方为复原态</item>
+        <item>白色中心块 Logo</item>
     </array>
 </resources>

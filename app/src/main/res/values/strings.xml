@@ -73,6 +73,7 @@
     <string name="select_color">Select color</string>
     <string name="title_gesture">GESTURE MANAGER</string>
     <string name="title_hardware">HARDWARE</string>
+    <string name="title_smart_mode">SMART MODE</string>
     <string name="eight_sec">8 seconds</string>
     <string name="twelve_sec">12 seconds</string>
     <string name="background_color">Background color</string>
@@ -139,6 +140,7 @@
     <string name="btn_scan">Scan</string>
     <string name="btn_cube_reset">Reset cube</string>
     <string name="btn_reset_orientation">Reset orientation</string>
+    <string name="btn_cube_logo">Center logo</string>
     <string name="btn_refresh">Refresh</string>
     <string name="btn_mark_solve">Mark solved</string>
     <string name="btn_mark_scramble">Mark scrambled</string>
@@ -163,6 +165,18 @@
     <string name="confirm_overwrite">File already exists. Overwrite?</string>
     <string name="smart_cube_reset_done">Cube reset to solved state</string>
     <string name="smart_cube_restore_first">Please restore the cube first</string>
+    <string name="smart_cube_wait_connect">Cube not connected</string>
+    <string name="smart_cube_logo_title">White center logo</string>
+    <string name="smart_cube_logo_none">No logo</string>
+    <string name="smart_cube_logo_builtin_ai">Built-in: DCTimerAI</string>
+    <string name="smart_cube_logo_builtin_htt">Built-in: Hu Tutu HTT</string>
+    <string name="smart_cube_logo_builtin_cube">Built-in: Cube</string>
+    <string name="smart_cube_logo_use_custom">Use current custom logo</string>
+    <string name="smart_cube_logo_upload_custom">Upload custom logo</string>
+    <string name="smart_cube_logo_applied">Center logo updated</string>
+    <string name="smart_cube_logo_upload_failed">Unable to load this image</string>
+    <string name="smart_cube_auto_orientation_reset_hint">Orientation reset automatically to white top, green front</string>
+    <string name="smart_cube_logo_crop_title">Move and scale the logo to fit the white center</string>
     <string name="delete_items">Delete selected items?</string>
     <string name="solve_none">None</string>
     <string name="cube2_face">Face</string>

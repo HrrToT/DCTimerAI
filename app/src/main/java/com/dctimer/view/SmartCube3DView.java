@@ -2,10 +2,12 @@ package com.dctimer.view;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.os.SystemClock;
 import android.text.TextUtils;
@@ -15,6 +17,7 @@ import android.view.ViewConfiguration;
 import android.view.animation.LinearInterpolator;
 
 import com.dctimer.model.SmartCubeOrientation;
+import com.dctimer.util.SmartCubeLogoProvider;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -103,6 +106,17 @@ public class SmartCube3DView extends GLSurfaceView {
             @Override
             public void run() {
                 cubeRenderer.resetOrientationToWhiteTopGreenFront();
+            }
+        });
+        requestRender();
+    }
+
+    public void reloadCenterLogo() {
+        final Bitmap logoBitmap = SmartCubeLogoProvider.loadLogoBitmap(getContext());
+        queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                cubeRenderer.setCenterLogoBitmap(logoBitmap);
             }
         });
         requestRender();
@@ -267,6 +281,8 @@ public class SmartCube3DView extends GLSurfaceView {
         private static final float CUBIE_EDGE_OUTER_RADIUS = 0.07f;
         private static final float CUBIE_EDGE_CENTER_RADIUS = 0.30f;
         private static final float CUBIE_CENTER_FACE_RADIUS = 0.40f;
+        private static final float CENTER_LOGO_HALF = 0.232f;
+        private static final float CENTER_LOGO_OFFSET = 0.012f;
         private static final int ROUNDED_CORNER_SEGMENTS = 5;
         private static final int ROUNDED_RECT_POINT_COUNT = (ROUNDED_CORNER_SEGMENTS + 1) * 4;
         private static final int ROUNDED_RECT_FLOAT_COUNT = ROUNDED_RECT_POINT_COUNT * 9;
@@ -282,6 +298,24 @@ public class SmartCube3DView extends GLSurfaceView {
                 "uniform vec4 uColor;" +
                 "void main() {" +
                 "  gl_FragColor = uColor;" +
+                "}";
+        private static final String TEXTURE_VERTEX_SHADER =
+                "uniform mat4 uMvpMatrix;" +
+                "attribute vec3 aPosition;" +
+                "attribute vec2 aTexCoord;" +
+                "varying vec2 vTexCoord;" +
+                "void main() {" +
+                "  vTexCoord = aTexCoord;" +
+                "  gl_Position = uMvpMatrix * vec4(aPosition, 1.0);" +
+                "}";
+        private static final String TEXTURE_FRAGMENT_SHADER =
+                "precision mediump float;" +
+                "uniform sampler2D uTexture;" +
+                "varying vec2 vTexCoord;" +
+                "void main() {" +
+                "  vec4 color = texture2D(uTexture, vTexCoord);" +
+                "  if (color.a <= 0.01) discard;" +
+                "  gl_FragColor = color;" +
                 "}";
         private static final Vec3 LIGHT = new Vec3(-0.35f, 0.65f, 0.68f).normalize();
         private static final Vec3[] FACE_NORMALS = {
@@ -319,9 +353,13 @@ public class SmartCube3DView extends GLSurfaceView {
         private final float[] vpMatrix = new float[16];
         private final float[] mvpMatrix = new float[16];
         private final float[] quad = new float[18];
+        private final float[] texturedQuad = new float[30];
         private final float[] roundedRectVertices = new float[ROUNDED_RECT_FLOAT_COUNT];
         private final Vec3[] roundedRectPoints = new Vec3[ROUNDED_RECT_POINT_COUNT];
         private final FloatBuffer quadBuffer = ByteBuffer.allocateDirect(quad.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
+        private final FloatBuffer texturedQuadBuffer = ByteBuffer.allocateDirect(texturedQuad.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
         private final FloatBuffer roundedRectBuffer = ByteBuffer.allocateDirect(roundedRectVertices.length * 4)
@@ -340,6 +378,13 @@ public class SmartCube3DView extends GLSurfaceView {
         private int positionHandle;
         private int colorHandle;
         private int mvpHandle;
+        private int textureProgram;
+        private int texturePositionHandle;
+        private int textureTexCoordHandle;
+        private int textureMvpHandle;
+        private int textureSamplerHandle;
+        private int centerLogoTextureId;
+        private Bitmap centerLogoBitmap;
 
         @Override
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
@@ -349,10 +394,16 @@ public class SmartCube3DView extends GLSurfaceView {
             positionHandle = GLES20.glGetAttribLocation(program, "aPosition");
             colorHandle = GLES20.glGetUniformLocation(program, "uColor");
             mvpHandle = GLES20.glGetUniformLocation(program, "uMvpMatrix");
+            textureProgram = createProgram(TEXTURE_VERTEX_SHADER, TEXTURE_FRAGMENT_SHADER);
+            texturePositionHandle = GLES20.glGetAttribLocation(textureProgram, "aPosition");
+            textureTexCoordHandle = GLES20.glGetAttribLocation(textureProgram, "aTexCoord");
+            textureMvpHandle = GLES20.glGetUniformLocation(textureProgram, "uMvpMatrix");
+            textureSamplerHandle = GLES20.glGetUniformLocation(textureProgram, "uTexture");
             GLES20.glClearColor(0f, 0f, 0f, 0f);
             GLES20.glEnable(GLES20.GL_DEPTH_TEST);
             GLES20.glEnable(GLES20.GL_BLEND);
             GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+            uploadCenterLogoTexture();
         }
 
         @Override
@@ -400,6 +451,14 @@ public class SmartCube3DView extends GLSurfaceView {
             }
         }
 
+        void setCenterLogoBitmap(Bitmap bitmap) {
+            if (centerLogoBitmap != null && centerLogoBitmap != bitmap && !centerLogoBitmap.isRecycled()) {
+                centerLogoBitmap.recycle();
+            }
+            centerLogoBitmap = bitmap;
+            uploadCenterLogoTexture();
+        }
+
         void rotateView(float deltaYaw, float deltaPitch) {
             viewYaw = normalizeDegrees(viewYaw + deltaYaw);
             viewPitch = clamp(viewPitch + deltaPitch, -MAX_VIEW_PITCH, MAX_VIEW_PITCH);
@@ -424,6 +483,32 @@ public class SmartCube3DView extends GLSurfaceView {
                 Matrix.setIdentityM(calibrationMatrix, 0);
             }
             updateMvpMatrix();
+        }
+
+        private void uploadCenterLogoTexture() {
+            deleteCenterLogoTexture();
+            if (centerLogoBitmap == null || centerLogoBitmap.isRecycled()) {
+                return;
+            }
+            int[] textures = new int[1];
+            GLES20.glGenTextures(1, textures, 0);
+            centerLogoTextureId = textures[0];
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, centerLogoTextureId);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, centerLogoBitmap, 0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        }
+
+        private void deleteCenterLogoTexture() {
+            if (centerLogoTextureId == 0) {
+                return;
+            }
+            int[] textures = {centerLogoTextureId};
+            GLES20.glDeleteTextures(1, textures, 0);
+            centerLogoTextureId = 0;
         }
 
         private void updateMvpMatrix() {
@@ -496,6 +581,13 @@ public class SmartCube3DView extends GLSurfaceView {
             drawQuad(faceCenter, u, v, normal, CUBIE_HALF, bevelColor);
             drawRoundedRect(faceCenter.add(normal.scale(CUBIE_FRONT_OFFSET)), u, v, normal,
                     frontHalf, frontHalf, cornerRadii, frontColor);
+            if (isWhiteCenterFace(cubie, face)) {
+                drawCenterLogo(faceCenter.add(normal.scale(CUBIE_FRONT_OFFSET + CENTER_LOGO_OFFSET)), u, v, normal);
+            }
+        }
+
+        private boolean isWhiteCenterFace(Cubie cubie, int face) {
+            return face == 0 && cubie.x == 0 && cubie.y == 1 && cubie.z == 0;
         }
 
         private boolean isCenterFace(Cubie cubie, int face) {
@@ -595,6 +687,13 @@ public class SmartCube3DView extends GLSurfaceView {
             drawVertices(roundedRectBuffer, roundedRectVertices, floatCount, pointCount * 3, color, normal);
         }
 
+        private void drawCenterLogo(Vec3 center, Vec3 u, Vec3 v, Vec3 normal) {
+            if (centerLogoTextureId == 0) {
+                return;
+            }
+            drawTexturedQuad(center, u, v, CENTER_LOGO_HALF, CENTER_LOGO_HALF);
+        }
+
         private int buildRoundedRectPoints(Vec3 center, Vec3 u, Vec3 v,
                                            float halfWidth, float halfHeight, CornerRadii radii) {
             float maxRadius = Math.min(halfWidth, halfHeight) * 0.86f;
@@ -641,8 +740,50 @@ public class SmartCube3DView extends GLSurfaceView {
             drawVertices(quadBuffer, quad, quad.length, 6, color, normal);
         }
 
+        private void drawTexturedQuad(Vec3 center, Vec3 u, Vec3 v, float halfWidth, float halfHeight) {
+            Vec3 p0 = center.add(u.scale(-halfWidth)).add(v.scale(-halfHeight));
+            Vec3 p1 = center.add(u.scale(halfWidth)).add(v.scale(-halfHeight));
+            Vec3 p2 = center.add(u.scale(halfWidth)).add(v.scale(halfHeight));
+            Vec3 p3 = center.add(u.scale(-halfWidth)).add(v.scale(halfHeight));
+            putTexturedVertex(p0, 0f, 1f, 0);
+            putTexturedVertex(p1, 1f, 1f, 5);
+            putTexturedVertex(p2, 1f, 0f, 10);
+            putTexturedVertex(p0, 0f, 1f, 15);
+            putTexturedVertex(p2, 1f, 0f, 20);
+            putTexturedVertex(p3, 0f, 0f, 25);
+
+            texturedQuadBuffer.clear();
+            texturedQuadBuffer.put(texturedQuad, 0, texturedQuad.length);
+            texturedQuadBuffer.position(0);
+
+            GLES20.glUseProgram(textureProgram);
+            GLES20.glUniformMatrix4fv(textureMvpHandle, 1, false, mvpMatrix, 0);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, centerLogoTextureId);
+            GLES20.glUniform1i(textureSamplerHandle, 0);
+            GLES20.glVertexAttribPointer(texturePositionHandle, 3, GLES20.GL_FLOAT, false, 20, texturedQuadBuffer);
+            GLES20.glEnableVertexAttribArray(texturePositionHandle);
+            texturedQuadBuffer.position(3);
+            GLES20.glVertexAttribPointer(textureTexCoordHandle, 2, GLES20.GL_FLOAT, false, 20, texturedQuadBuffer);
+            GLES20.glEnableVertexAttribArray(textureTexCoordHandle);
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
+            GLES20.glDisableVertexAttribArray(texturePositionHandle);
+            GLES20.glDisableVertexAttribArray(textureTexCoordHandle);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+            GLES20.glUseProgram(program);
+            GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvpMatrix, 0);
+        }
+
         private void putTriangle(Vec3 p0, Vec3 p1, Vec3 p2, int offset) {
             putTriangle(p0, p1, p2, quad, offset);
+        }
+
+        private void putTexturedVertex(Vec3 point, float u, float v, int offset) {
+            texturedQuad[offset] = point.x;
+            texturedQuad[offset + 1] = point.y;
+            texturedQuad[offset + 2] = point.z;
+            texturedQuad[offset + 3] = u;
+            texturedQuad[offset + 4] = v;
         }
 
         private void putTriangle(Vec3 p0, Vec3 p1, Vec3 p2, float[] target, int offset) {
@@ -706,13 +847,13 @@ public class SmartCube3DView extends GLSurfaceView {
                 case 'U':
                     return 0xfff2f0e8;
                 case 'R':
-                    return 0xffe01a14;
+                    return 0xffc92a24;
                 case 'F':
                     return 0xff00b84a;
                 case 'D':
-                    return 0xffffea45;
+                    return 0xfffff066;
                 case 'L':
-                    return 0xffff5c00;
+                    return 0xffffa400;
                 case 'B':
                     return 0xff0080ff;
                 default:

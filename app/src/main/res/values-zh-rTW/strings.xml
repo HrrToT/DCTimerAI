@@ -209,4 +209,18 @@
     <string name="about_msg">"版本：%1$s\n基於 DCTimer-Android 和 DCTimer-BLE 開發\n原作者：MeigenChou\nDCTimer-BLE 作者：huizhiLLL\n目前維護與定製：胡圖圖\n技術協作：Codex\n版權所有 © 2012—2022 MeigenChou\nGPL v3 開源\n項目倉庫地址：https://github.com/HrrToT/DCTimerAI"</string>
     <string name="feedback_title">DCTimerAI反饋</string>
     <string name="language">cn</string>
+    <string name="btn_cube_logo">中心 Logo</string>
+    <string name="smart_cube_logo_title">白色中心塊 Logo</string>
+    <string name="smart_cube_logo_none">不顯示 Logo</string>
+    <string name="smart_cube_logo_builtin_ai">內建：DCTimerAI</string>
+    <string name="smart_cube_logo_builtin_htt">內建：胡圖圖 HTT</string>
+    <string name="smart_cube_logo_builtin_cube">內建：Cube</string>
+    <string name="smart_cube_logo_use_custom">使用目前自訂 Logo</string>
+    <string name="smart_cube_logo_upload_custom">上傳自訂 Logo</string>
+    <string name="smart_cube_logo_applied">中心 Logo 已更新</string>
+    <string name="smart_cube_logo_upload_failed">無法讀取這張圖片</string>
+    <string name="smart_cube_wait_connect">魔方未連接</string>
+    <string name="title_smart_mode">智能模式</string>
+    <string name="smart_cube_auto_orientation_reset_hint">已自動重置姿態，預設白頂綠前</string>
+    <string name="smart_cube_logo_crop_title">拖動和縮放 Logo，讓它盡量鋪滿白色中心塊</string>
 </resources>

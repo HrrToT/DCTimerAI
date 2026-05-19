@@ -371,6 +371,11 @@
         <item>Generated solution orientation</item>
         <item>Scramble progress style</item>
         <item>Layout</item>
+        <item>Auto open connection dialog</item>
+        <item>Tap timer area to connect</item>
+        <item>Auto reset orientation after connection (white top, green front)</item>
+        <item>Reset cube to solved state</item>
+        <item>White center logo</item>
     </array>
 
     <array name="item_scramble">
@@ -449,6 +454,14 @@
         <item>Haptic feedback</item>
         <item>Hapic feedback duration</item>
         <item>Screen orientation</item>
+    </array>
+
+    <array name="item_smart_mode">
+        <item>Auto open connection dialog</item>
+        <item>Tap timer area to connect</item>
+        <item>Auto reset orientation after connection (white top, green front)</item>
+        <item>Reset cube to solved state</item>
+        <item>White center logo</item>
     </array>
 
     <array name="opt_eg_scramble">

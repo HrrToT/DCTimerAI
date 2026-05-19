@@ -48,6 +48,7 @@ public class CubeStateDialog extends DialogFragment {
         cube3DView = view.findViewById(R.id.gl_cube_state);
         imageView = view.findViewById(R.id.image_view);
         setImage();
+        reloadLogo();
         Button btRefresh = view.findViewById(R.id.btn_refresh);
         btRefresh.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -56,29 +57,6 @@ public class CubeStateDialog extends DialogFragment {
                 int batteryValue = currentCube == null ? 0 : currentCube.getBatteryValue();
                 tvBattery.setText(batteryValue + "%");
                 setBatteryImage(batteryValue);
-                setImage();
-            }
-        });
-        Button btResetOrientation = view.findViewById(R.id.btn_reset_orientation);
-        btResetOrientation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (getActivity() instanceof MainActivity) {
-                    ((MainActivity) getActivity()).resetSmartCubeOrientationViews();
-                } else {
-                    resetOrientationView();
-                }
-            }
-        });
-        Button btMarkSolve = view.findViewById(R.id.bt_solved);
-        btMarkSolve.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (getActivity() instanceof MainActivity) {
-                    ((MainActivity) getActivity()).resetSmartCubeToSolved();
-                } else if (cube != null) {
-                    cube.markSolved();
-                }
                 setImage();
             }
         });
@@ -105,6 +83,7 @@ public class CubeStateDialog extends DialogFragment {
         super.onResume();
         if (cube3DView != null) {
             cube3DView.onResume();
+            reloadLogo();
             setImage();
         }
     }
@@ -157,6 +136,7 @@ public class CubeStateDialog extends DialogFragment {
         if (ivBattery != null) {
             setBatteryImage(batteryValue);
         }
+        reloadLogo();
         setImage();
     }
 
@@ -180,6 +160,12 @@ public class CubeStateDialog extends DialogFragment {
     public void resetOrientationView() {
         if (cube3DView != null) {
             cube3DView.resetOrientationToWhiteTopGreenFront();
+        }
+    }
+
+    public void reloadLogo() {
+        if (cube3DView != null) {
+            cube3DView.reloadCenterLogo();
         }
     }
 

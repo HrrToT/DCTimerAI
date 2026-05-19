@@ -12,6 +12,7 @@ import com.dctimer.database.DBHelper;
 import com.dctimer.database.SessionManager;
 import com.dctimer.model.BLEDevice;
 import com.dctimer.model.Result;
+import com.dctimer.util.SmartCubeLogoProvider;
 
 import java.util.List;
 
@@ -101,6 +102,12 @@ public class APP extends Application {
     public static int smartCubeSolveOrientation;
     public static int smartCubeScrambleProgressStyle;
     public static int smartCubeLayoutMode;
+    public static int smartCubeLogoMode;
+    public static String smartCubeLogoBuiltinId;
+    public static String smartCubeLogoUri;
+    public static boolean smartModeAutoOpenConnectDialog;
+    public static boolean smartModeTapTimerToConnect;
+    public static boolean smartModeAutoResetOrientation;
 
     @Override
     public void onCreate() {
@@ -155,8 +162,8 @@ public class APP extends Application {
         inspectionAlert = sp.getBoolean("wcainsp", false); //观察语音提示
         timeFormat = sp.getInt("timeform", 0);	//时间格式
         decimalMark = sp.getInt("decim", 0);
-        enterTime = sp.getInt("tiway", 0);	// 计时方式
-        if (enterTime > 1) enterTime = 0;
+        enterTime = sp.getInt("tiway", 3);	// 计时方式
+        if (enterTime < 0 || enterTime > 4) enterTime = 3;
         timerUpdate = sp.getInt("timerupd", 0);	// 计时器更新
         timerAccuracy = sp.getBoolean("prec", true) ? 1 : 0;	// 计时精度
         freezeTime = sp.getInt("tapt", 0);	//启动延时
@@ -233,11 +240,17 @@ public class APP extends Application {
         if (smartCubeScrambleProgressStyle < 0 || smartCubeScrambleProgressStyle > 1) smartCubeScrambleProgressStyle = 0;
         smartCubeLayoutMode = sp.getInt("sclayout", 0);
         if (smartCubeLayoutMode < 0 || smartCubeLayoutMode > 1) smartCubeLayoutMode = 0;
+        smartCubeLogoMode = sp.getInt("smartcubelogomode", SmartCubeLogoProvider.MODE_NONE);
+        smartCubeLogoBuiltinId = sp.getString("smartcubelogobuiltin", SmartCubeLogoProvider.BUILTIN_DCTIMER_AI);
+        smartCubeLogoUri = sp.getString("smartcubelogouri", "");
+        smartModeAutoOpenConnectDialog = sp.getBoolean("smartmodeautoconnect", true);
+        smartModeTapTimerToConnect = sp.getBoolean("smartmodetaptoconnect", true);
+        smartModeAutoResetOrientation = sp.getBoolean("smartmodeautoorireset", true);
     }
 
     public static void resetPref() {
         wca = false; inspectionAlert = false; timeFormat = 0;
-        decimalMark = 0; enterTime = 0; timerUpdate = 0;
+        decimalMark = 0; enterTime = 3; timerUpdate = 0;
         timerAccuracy = 1; freezeTime = 0; multiPhase = 0;
         simulateSS = false; showStat = true; scrambleSize = 18;
         showImage = true; monoFont = false; imageSize = 220;
@@ -250,6 +263,12 @@ public class APP extends Application {
         fullScreen = false; screenOn = false; vibrateType = 0;
         vibrateTime = 2; screenOri = 0;
         resultOrderType = 0; sortType = 0;
+        smartCubeLogoMode = SmartCubeLogoProvider.MODE_NONE;
+        smartCubeLogoBuiltinId = SmartCubeLogoProvider.BUILTIN_DCTIMER_AI;
+        smartCubeLogoUri = "";
+        smartModeAutoOpenConnectDialog = true;
+        smartModeTapTimerToConnect = true;
+        smartModeAutoResetOrientation = true;
         colors[0] = 0xffffffff;	colors[1] = 0xff000000;	colors[2] = 0xffff00ff;
         colors[3] = 0xffee3333;	colors[4] = 0xff009900; colors[5] = 0xffffffff;
         colors[6] = 0xff000000;

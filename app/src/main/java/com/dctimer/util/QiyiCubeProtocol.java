@@ -562,7 +562,7 @@ public class QiyiCubeProtocol implements SmartCubeProtocol {
         context.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                context.showCubeStateDialog();
+                context.onSmartCubeReady();
             }
         });
     }

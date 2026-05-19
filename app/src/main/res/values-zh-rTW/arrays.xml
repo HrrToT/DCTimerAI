@@ -316,6 +316,11 @@
         <item>解法欄位生成基準</item>
         <item>轉亂推進樣式</item>
         <item>佈局</item>
+        <item>自動彈出連接視窗</item>
+        <item>點擊計時區域時打開連接視窗</item>
+        <item>連接後自動姿態重置（白頂綠前）</item>
+        <item>重置魔方為復原態</item>
+        <item>白色中心塊 Logo</item>
     </array>
 
     <array name="item_scramble">
@@ -461,5 +466,12 @@
         <item>順時針轉90度</item>
         <item>轉180度</item>
         <item>逆時針轉90度</item>
+    </array>
+    <array name="item_smart_mode">
+        <item>自動彈出連接視窗</item>
+        <item>點擊計時區時打開連接視窗</item>
+        <item>連接後自動姿態重置（白頂綠前）</item>
+        <item>重置魔方為復原態</item>
+        <item>白色中心塊 Logo</item>
     </array>
 </resources>

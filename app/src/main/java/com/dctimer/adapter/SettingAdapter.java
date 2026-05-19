@@ -78,6 +78,11 @@ public class SettingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public static final int ST_VIBRATE = 60;
     public static final int ST_VIBRATE_TIME = 61;
     public static final int ST_SCREEN_ORIENTATION = 62;
+    public static final int ST_SMART_MODE_AUTO_CONNECT = 63;
+    public static final int ST_SMART_MODE_TAP_TO_CONNECT = 64;
+    public static final int ST_SMART_MODE_AUTO_RESET_ORIENTATION = 65;
+    public static final int ST_SMART_MODE_RESET_SOLVED = 66;
+    public static final int ST_SMART_MODE_CENTER_LOGO = 67;
     private MainActivity dct;
     private Map<Integer, String> headers;
     private List<Map<String, Object>> cells;
@@ -257,6 +262,18 @@ public class SettingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     break;
                 case ST_SCREEN_ORIENTATION:    //屏幕方向
                     map.put("detail", itemStr[9][screenOri]);
+                    break;
+                case ST_SMART_MODE_AUTO_CONNECT:
+                    map.put("detail", smartModeAutoOpenConnectDialog);
+                    break;
+                case ST_SMART_MODE_TAP_TO_CONNECT:
+                    map.put("detail", smartModeTapTimerToConnect);
+                    break;
+                case ST_SMART_MODE_AUTO_RESET_ORIENTATION:
+                    map.put("detail", smartModeAutoResetOrientation);
+                    break;
+                case ST_SMART_MODE_CENTER_LOGO:
+                    map.put("detail", dct.getSmartCubeLogoSettingLabel());
                     break;
             }
         }

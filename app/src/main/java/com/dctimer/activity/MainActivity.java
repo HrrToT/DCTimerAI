@@ -133,6 +133,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private final List<Integer> settingSectionPositions = new ArrayList<>();
     private final List<TextView> settingSectionTabViews = new ArrayList<>();
     private int activeSettingSection = -1;
+    private int smartModeSectionPosition = -1;
     private ColorSchemeView colorSchemeView;
     public Bitmap bitmap;
 
@@ -179,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private boolean smartCubeCorrectionLocked;
     private long smartCubeLastRestoreHintTime;
     private boolean smartCubeSkipStartForCurrentMove;
+    private boolean pendingAutoOrientationResetAfterCubeReady;
     private boolean pendingBleDialogAfterPermission;
     private boolean pendingBleScanAfterPermission;
 
@@ -192,6 +194,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private static final int REQUEST_EXPORT_DATABASE = 10;
     private static final int REQUEST_IMPORT_SCRAMBLE = 11;
     private static final int REQUEST_EXPORT_SCRAMBLE = 12;
+    private static final int REQUEST_SMART_CUBE_LOGO_IMAGE = 13;
+    private static final int REQUEST_SMART_CUBE_LOGO_CROP = 14;
     private static final int REQUEST_BLE_PERMISSION = 6;
     private static final int ANDROID_API_S = 31;
     private static final int SMART_CUBE_CORRECTION_LIMIT = 10;
@@ -315,6 +319,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         break;
                 }
                 tabHost.setCurrentTab(curTab);
+                if (curTab == 2) {
+                    scrollToSmartModeSection();
+                }
             }
         });
         rbTimer = findViewById(R.id.rb_timer);
@@ -338,8 +345,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         smartCube3DView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (shouldShowTimerPageCubeState()) {
+                if (getActiveSmartCube() != null) {
                     showCubeStateDialog();
+                } else if (isSmartCubeMode()) {
+                    startBleScanFlow();
                 }
             }
         });
@@ -351,6 +360,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
             }
         });
+        smartCube3DView.reloadCenterLogo();
         int tvHeight = (int) (dm.heightPixels - 76 * dpi) / 2;
         tvScramble.setHeight(tvHeight);
         //tvScramble.setMovementMethod(ScrollingMovementMethod.getInstance());
@@ -404,11 +414,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 new int[] {0, 0, 0, 0, 0, 0, 0, 20<<16|freezeTime, 0, 0, 0, 0, 95<<16|((int) (sensitivity *100)-5)},
                 new int[] {ST_WCA, ST_INSPECTION_ALERT, ST_TIME_FORMAT, ST_DECIMAL_MARK, ST_ENTER_TIME, ST_TIMER_UPDATE, ST_TIMER_ACCURACY, ST_START_DELAY, ST_MULTI_PHASE, ST_SIMULATE_SS, ST_SHOW_STATS, ST_DROP_TO_STOP, ST_SENSITIVITY});
         Utils.addSection(headers, cells, getString(R.string.title_smart), getResources().getStringArray(R.array.item_smart),
-                new int[] {0, 0, 0},
+                new int[] {0, 0, 0, 1, 1, 1, 0, 0},
                 new Object[] {getSmartCubeOrientationLabel(smartCubeSolveOrientation), getResources().getStringArray(R.array.opt_smart_scramble_progress)[smartCubeScrambleProgressStyle],
-                        getResources().getStringArray(R.array.opt_smart_layout)[smartCubeLayoutMode]},
-                new int[3],
-                new int[] {ST_SMART_ORIENTATION, ST_SMART_SCRAMBLE_PROGRESS, ST_SMART_LAYOUT});
+                        getResources().getStringArray(R.array.opt_smart_layout)[smartCubeLayoutMode], APP.smartModeAutoOpenConnectDialog,
+                        APP.smartModeTapTimerToConnect, APP.smartModeAutoResetOrientation, "",
+                        getSmartCubeLogoSettingLabel()},
+                new int[8],
+                new int[] {ST_SMART_ORIENTATION, ST_SMART_SCRAMBLE_PROGRESS, ST_SMART_LAYOUT,
+                        ST_SMART_MODE_AUTO_CONNECT, ST_SMART_MODE_TAP_TO_CONNECT, ST_SMART_MODE_AUTO_RESET_ORIENTATION,
+                        ST_SMART_MODE_RESET_SOLVED, ST_SMART_MODE_CENTER_LOGO});
         Utils.addSection(headers, cells, getString(R.string.title_scramble), getResources().getStringArray(R.array.item_scramble),
                 new int[] {2, 1, 1, 2, 0},
                 new Object[] {String.valueOf(scrambleSize), monoFont, showImage, "", ""},
@@ -999,6 +1013,41 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_SMART_CUBE_LOGO_IMAGE) {
+            if (resultCode == RESULT_OK && data != null) {
+                try {
+                    Uri uri = data.getData();
+                    if (uri != null) {
+                        int takeFlags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                        try {
+                            getContentResolver().takePersistableUriPermission(uri, takeFlags & Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        } catch (SecurityException ignored) { }
+                        Intent cropIntent = new Intent(this, SmartCubeLogoCropActivity.class);
+                        cropIntent.putExtra(SmartCubeLogoCropActivity.EXTRA_INPUT_URI, uri.toString());
+                        startActivityForResult(cropIntent, REQUEST_SMART_CUBE_LOGO_CROP);
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(context, R.string.smart_cube_logo_upload_failed, Toast.LENGTH_SHORT).show();
+                } catch (Error e) {
+                    Toast.makeText(context, R.string.smart_cube_logo_upload_failed, Toast.LENGTH_SHORT).show();
+                }
+            }
+            return;
+        }
+        if (requestCode == REQUEST_SMART_CUBE_LOGO_CROP) {
+            if (resultCode == RESULT_OK && data != null) {
+                String outputUri = data.getStringExtra(SmartCubeLogoCropActivity.EXTRA_OUTPUT_URI);
+                if (!TextUtils.isEmpty(outputUri)) {
+                    APP.smartCubeLogoMode = SmartCubeLogoProvider.MODE_CUSTOM;
+                    APP.smartCubeLogoUri = outputUri;
+                    setPref("smartcubelogomode", APP.smartCubeLogoMode);
+                    setPref("smartcubelogouri", APP.smartCubeLogoUri);
+                    refreshSmartCubeLogoViews();
+                    Toast.makeText(context, R.string.smart_cube_logo_applied, Toast.LENGTH_SHORT).show();
+                }
+            }
+            return;
+        }
         if (requestCode == REQUEST_BACKGROUND_IMAGE) { //背景图片
             if (resultCode == RESULT_OK && data != null) {
                 try {
@@ -1216,7 +1265,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         handler.removeCallbacks(stopBleScanRunnable);
                         bluetoothTools.stopScan();
                         bluetoothTools.disconnect();
-                        fallbackBleModeToTimer();
+                        clearBleConnectionState();
                     }
                 }).setCancelable(false).show();
         startBleScanInternal();
@@ -1285,10 +1334,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private boolean shouldShowTimerPageCubeState() {
-        return getActiveSmartCube() != null;
+        return isSmartCubeMode()
+                && currentScramble != null
+                && currentScramble.is333Scramble();
     }
 
     private String getIdleTimerText() {
+        if (isSmartCubeMode() && getActiveSmartCube() == null) {
+            return getString(R.string.smart_cube_wait_connect);
+        }
         return "0" + (decimalMark == 0 ? "." : ",") + (timerAccuracy == 0 ? "00" : "000");
     }
 
@@ -1833,6 +1887,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void resetSmartCubeToSolved() {
         SmartCube cube = getActiveSmartCube();
         if (cube == null) {
+            Toast.makeText(context, R.string.smart_cube_wait_connect, Toast.LENGTH_SHORT).show();
             return;
         }
         cube.markSolved();
@@ -1902,7 +1957,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                fallbackBleModeToTimer();
+                clearBleConnectionState();
                 if (adapter != null)
                     adapter.notifyDataSetChanged();
                 Toast.makeText(context, device.getName() + getString(R.string.cube_not_connected), Toast.LENGTH_SHORT).show();
@@ -1910,16 +1965,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
     }
 
-    private void fallbackBleModeToTimer() {
+    private void clearBleConnectionState() {
         if (!isSmartCubeMode() && !isSmartTimerMode()) {
             return;
         }
-        enterTime = 0;
         bleDeviceType = BLEDevice.TYPE_UNKNOWN;
-        if (stAdapter != null) {
-            stAdapter.setText(ST_ENTER_TIME, itemStr[0][enterTime]);
-        }
-        setPref("tiway", enterTime);
+        pendingAutoOrientationResetAfterCubeReady = false;
+        canStart = false;
+        smartCubeSkipStartForCurrentMove = false;
         setTimerColor(APP.getTextColor());
         setTimerText(getIdleTimerText());
         timer.setTimerState(DCTTimer.READY);
@@ -2009,6 +2062,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         dialog.show(getSupportFragmentManager(), "CubeState");
     }
 
+    public void onSmartCubeReady() {
+        pendingAutoOrientationResetAfterCubeReady = APP.smartModeAutoResetOrientation;
+        showCubeStateDialog();
+        if (pendingAutoOrientationResetAfterCubeReady) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    resetSmartCubeOrientationViews();
+                    pendingAutoOrientationResetAfterCubeReady = false;
+                    Toast.makeText(context, R.string.smart_cube_auto_orientation_reset_hint, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
     public void resetSmartCubeOrientationViews() {
         if (smartCube3DView != null) {
             smartCube3DView.resetOrientationToWhiteTopGreenFront();
@@ -2016,6 +2084,98 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         androidx.fragment.app.Fragment fragment = getSupportFragmentManager().findFragmentByTag("CubeState");
         if (fragment instanceof CubeStateDialog) {
             ((CubeStateDialog) fragment).resetOrientationView();
+        }
+    }
+
+    public String getSmartCubeLogoSettingLabel() {
+        if (APP.smartCubeLogoMode == SmartCubeLogoProvider.MODE_NONE) {
+            return getString(R.string.smart_cube_logo_none);
+        }
+        if (APP.smartCubeLogoMode == SmartCubeLogoProvider.MODE_CUSTOM && SmartCubeLogoProvider.hasCustomLogo()) {
+            return getString(R.string.smart_cube_logo_use_custom);
+        }
+        if (SmartCubeLogoProvider.BUILTIN_HTT.equals(APP.smartCubeLogoBuiltinId)) {
+            return getString(R.string.smart_cube_logo_builtin_htt);
+        }
+        if (SmartCubeLogoProvider.BUILTIN_CUBE.equals(APP.smartCubeLogoBuiltinId)) {
+            return getString(R.string.smart_cube_logo_builtin_cube);
+        }
+        return getString(R.string.smart_cube_logo_builtin_ai);
+    }
+
+    public void showSmartCubeLogoOptions() {
+        final ArrayList<CharSequence> labels = new ArrayList<>();
+        final ArrayList<Integer> actions = new ArrayList<>();
+        final ArrayList<String> values = new ArrayList<>();
+
+        labels.add(getString(R.string.smart_cube_logo_none));
+        actions.add(SmartCubeLogoProvider.MODE_NONE);
+        values.add("");
+
+        labels.add(getString(R.string.smart_cube_logo_builtin_ai));
+        actions.add(SmartCubeLogoProvider.MODE_BUILTIN);
+        values.add(SmartCubeLogoProvider.BUILTIN_DCTIMER_AI);
+
+        labels.add(getString(R.string.smart_cube_logo_builtin_htt));
+        actions.add(SmartCubeLogoProvider.MODE_BUILTIN);
+        values.add(SmartCubeLogoProvider.BUILTIN_HTT);
+
+        labels.add(getString(R.string.smart_cube_logo_builtin_cube));
+        actions.add(SmartCubeLogoProvider.MODE_BUILTIN);
+        values.add(SmartCubeLogoProvider.BUILTIN_CUBE);
+
+        if (SmartCubeLogoProvider.hasCustomLogo()) {
+            labels.add(getString(R.string.smart_cube_logo_use_custom));
+            actions.add(SmartCubeLogoProvider.MODE_CUSTOM);
+            values.add(APP.smartCubeLogoUri);
+        }
+
+        labels.add(getString(R.string.smart_cube_logo_upload_custom));
+        actions.add(-1);
+        values.add("");
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.smart_cube_logo_title)
+                .setItems(labels.toArray(new CharSequence[0]), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int which) {
+                        int action = actions.get(which);
+                        String value = values.get(which);
+                        if (action == -1) {
+                            openSmartCubeLogoPicker();
+                            return;
+                        }
+                        if (action == SmartCubeLogoProvider.MODE_NONE) {
+                            APP.smartCubeLogoMode = SmartCubeLogoProvider.MODE_NONE;
+                            setPref("smartcubelogomode", APP.smartCubeLogoMode);
+                        } else if (action == SmartCubeLogoProvider.MODE_BUILTIN) {
+                            APP.smartCubeLogoMode = SmartCubeLogoProvider.MODE_BUILTIN;
+                            APP.smartCubeLogoBuiltinId = value;
+                            setPref("smartcubelogomode", APP.smartCubeLogoMode);
+                            setPref("smartcubelogobuiltin", APP.smartCubeLogoBuiltinId);
+                        } else if (action == SmartCubeLogoProvider.MODE_CUSTOM && !TextUtils.isEmpty(value)) {
+                            APP.smartCubeLogoMode = SmartCubeLogoProvider.MODE_CUSTOM;
+                            APP.smartCubeLogoUri = value;
+                            setPref("smartcubelogomode", APP.smartCubeLogoMode);
+                            setPref("smartcubelogouri", APP.smartCubeLogoUri);
+                        }
+                        refreshSmartCubeLogoViews();
+                        Toast.makeText(context, R.string.smart_cube_logo_applied, Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .show();
+    }
+
+    public void refreshSmartCubeLogoViews() {
+        if (smartCube3DView != null) {
+            smartCube3DView.reloadCenterLogo();
+        }
+        androidx.fragment.app.Fragment fragment = getSupportFragmentManager().findFragmentByTag("CubeState");
+        if (fragment instanceof CubeStateDialog) {
+            ((CubeStateDialog) fragment).reloadLogo();
+        }
+        if (stAdapter != null) {
+            stAdapter.setText(ST_SMART_MODE_CENTER_LOGO, getSmartCubeLogoSettingLabel());
         }
     }
 
@@ -2610,7 +2770,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                             if (wcaWasEnabled) {
                                 Toast.makeText(context, R.string.smart_timer_wca_auto_disabled, Toast.LENGTH_SHORT).show();
                             }
-                            startBleScanFlow();
+                            if (APP.smartModeAutoOpenConnectDialog) {
+                                startBleScanFlow();
+                            } else {
+                                if (bluetoothTools != null) {
+                                    bluetoothTools.disconnect();
+                                }
+                                clearBleConnectionState();
+                            }
                         }
                         if (wasSmartCubeMode && !isSmartCubeMode()) {
                             hideTimerPageCubeState();
@@ -3373,6 +3540,27 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
+            case ST_SMART_MODE_AUTO_CONNECT:
+                APP.smartModeAutoOpenConnectDialog = !APP.smartModeAutoOpenConnectDialog;
+                stAdapter.setCheck(position, APP.smartModeAutoOpenConnectDialog);
+                setPref("smartmodeautoconnect", APP.smartModeAutoOpenConnectDialog);
+                break;
+            case ST_SMART_MODE_TAP_TO_CONNECT:
+                APP.smartModeTapTimerToConnect = !APP.smartModeTapTimerToConnect;
+                stAdapter.setCheck(position, APP.smartModeTapTimerToConnect);
+                setPref("smartmodetaptoconnect", APP.smartModeTapTimerToConnect);
+                break;
+            case ST_SMART_MODE_AUTO_RESET_ORIENTATION:
+                APP.smartModeAutoResetOrientation = !APP.smartModeAutoResetOrientation;
+                stAdapter.setCheck(position, APP.smartModeAutoResetOrientation);
+                setPref("smartmodeautoorireset", APP.smartModeAutoResetOrientation);
+                break;
+            case ST_SMART_MODE_RESET_SOLVED:
+                resetSmartCubeToSolved();
+                break;
+            case ST_SMART_MODE_CENTER_LOGO:
+                showSmartCubeLogoOptions();
+                break;
         }
     }
 
@@ -3460,13 +3648,28 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         settingSectionPositions.clear();
         settingSectionTabViews.clear();
         activeSettingSection = -1;
+        smartModeSectionPosition = -1;
         settingSectionTabs.removeAllViews();
 
         settingSectionPositions.addAll(headers.keySet());
-        Collections.sort(settingSectionPositions);
+        final String smartModeTitle = getString(R.string.title_smart);
+        Collections.sort(settingSectionPositions, new Comparator<Integer>() {
+            @Override
+            public int compare(Integer left, Integer right) {
+                boolean leftSmart = smartModeTitle.equals(headers.get(left));
+                boolean rightSmart = smartModeTitle.equals(headers.get(right));
+                if (leftSmart == rightSmart) {
+                    return Integer.compare(left, right);
+                }
+                return leftSmart ? -1 : 1;
+            }
+        });
         for (int i = 0; i < settingSectionPositions.size(); i++) {
             final int index = i;
             final int position = settingSectionPositions.get(i);
+            if (smartModeTitle.equals(headers.get(position))) {
+                smartModeSectionPosition = position;
+            }
             TextView tab = new TextView(context);
             tab.setText(headers.get(position));
             tab.setTextSize(14);
@@ -3506,17 +3709,39 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
     }
 
+    private void scrollToSmartModeSection() {
+        if (smartModeSectionPosition < 0 || rvSetting == null) {
+            return;
+        }
+        rvSetting.post(new Runnable() {
+            @Override
+            public void run() {
+                RecyclerView.LayoutManager manager = rvSetting.getLayoutManager();
+                if (manager instanceof LinearLayoutManager) {
+                    ((LinearLayoutManager) manager).scrollToPositionWithOffset(smartModeSectionPosition, 0);
+                } else {
+                    rvSetting.scrollToPosition(smartModeSectionPosition);
+                }
+                updateSettingSectionByScroll();
+            }
+        });
+    }
+
     private void updateSettingSectionByScroll() {
         if (settingSectionPositions.isEmpty() || rvSetting == null) return;
         RecyclerView.LayoutManager manager = rvSetting.getLayoutManager();
         if (!(manager instanceof LinearLayoutManager)) return;
         int firstVisible = ((LinearLayoutManager) manager).findFirstVisibleItemPosition();
         if (firstVisible == RecyclerView.NO_POSITION) return;
-        int active = 0;
-        for (int i = 0; i < settingSectionPositions.size(); i++) {
-            if (firstVisible >= settingSectionPositions.get(i)) active = i;
+        ArrayList<Integer> sortedPositions = new ArrayList<>(settingSectionPositions);
+        Collections.sort(sortedPositions);
+        int activePosition = sortedPositions.get(0);
+        for (int i = 0; i < sortedPositions.size(); i++) {
+            if (firstVisible >= sortedPositions.get(i)) activePosition = sortedPositions.get(i);
             else break;
         }
+        int active = settingSectionPositions.indexOf(activePosition);
+        if (active < 0) active = 0;
         setActiveSettingSection(active);
     }
 
@@ -3624,6 +3849,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         setBackgroundColor();
                         //setPrimaryDark();
                         setViews();
+                        refreshSmartCubeLogoViews();
                         setTextsColor();
                         setIconColor();
                         resAdapter.notifyDataSetChanged();
@@ -3749,6 +3975,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         edit.remove("sensity");	edit.remove("monoscr");	edit.remove("showscr");
         edit.remove("timerupd");	edit.remove("timeform");    edit.remove("showstat");
         edit.remove("screenori");   edit.remove("resultorder");
+        edit.remove("smartcubelogomode"); edit.remove("smartcubelogobuiltin");
+        edit.remove("smartcubelogouri");
+        edit.remove("smartmodeautoconnect"); edit.remove("smartmodetaptoconnect");
+        edit.remove("smartmodeautoorireset");
         edit.apply();
     }
 
@@ -4302,7 +4532,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void showScrambleView() {   //显示打乱状态
         final SmartCube cube = getActiveSmartCube();
-        if (!showImage && cube == null) {
+        final boolean shouldShowVirtualCube = shouldShowTimerPageCubeState();
+        if (!showImage && cube == null && !shouldShowVirtualCube) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -4311,6 +4542,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
             });
             return;
+        }
+        if (shouldShowVirtualCube) {
+            final String cubeState = cube != null && !TextUtils.isEmpty(cube.getCubeState())
+                    ? cube.getCubeState()
+                    : SOLVED_FACELET;
+            if (!TextUtils.isEmpty(cubeState)) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        showTimerPageCubeState(cubeState);
+                    }
+                });
+                return;
+            }
         }
         //Log.w("dct", currentScramble.getCategory()+", "+currentScramble.getImageType());
         if (cube != null && !TextUtils.isEmpty(cube.getCubeState())) {
@@ -4573,7 +4818,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     if (bluetoothTools.getCube() != null) {
                         CubeStateDialog dialog = CubeStateDialog.newInstance(bluetoothTools.getCube());
                         dialog.show(getSupportFragmentManager(), "CubeState");
+                    } else if (APP.smartModeTapTimerToConnect) {
+                        startBleScanFlow();
+                    } else {
+                        Toast.makeText(context, R.string.smart_cube_wait_connect, Toast.LENGTH_SHORT).show();
                     }
+                } else if (APP.smartModeTapTimerToConnect) {
+                    startBleScanFlow();
+                } else {
+                    Toast.makeText(context, R.string.smart_cube_wait_connect, Toast.LENGTH_SHORT).show();
                 }
             } else if (enterTime == 1) { //手动输入成绩
                 setReadyHoldUi(false);
@@ -5046,5 +5299,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         i.setType("image/*");
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         startActivityForResult(i, REQUEST_BACKGROUND_IMAGE);
+    }
+
+    private void openSmartCubeLogoPicker() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("image/*");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        startActivityForResult(intent, REQUEST_SMART_CUBE_LOGO_IMAGE);
     }
 }
