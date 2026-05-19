@@ -25,6 +25,12 @@
 
 ---
 
+## Acknowledgements
+
+Thanks to [huizhiLLL](https://github.com/huizhiLLL), the author of [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE), for the pioneering work on smart cube Bluetooth connection and MAC-free quick connection, which laid the foundation for this project.
+
+---
+
 ## About
 
 `DCTimerAI` is a modified version of [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE). The upstream project already provides speedcubing timing, smart cube connection, Bluetooth timer support, scramble generation, solve history, statistics, and real-time smart cube 3D previews.

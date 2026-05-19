@@ -25,6 +25,12 @@
 
 ---
 
+## 鸣谢
+
+感谢 [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE) 作者 [huizhiLLL](https://github.com/huizhiLLL) 的开创性工作，实现了智能魔方蓝牙连接以及免 MAC 地址快速连接功能，为本项目奠定了坚实基础。
+
+---
+
 ## 项目说明
 
 `DCTimerAI` 是基于 [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE) 的二次开发版本。原项目已经支持普通魔方计时、智能魔方连接、蓝牙计时器、打乱生成、成绩保存、统计和智能魔方 3D 状态预览。
