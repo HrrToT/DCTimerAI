@@ -201,6 +201,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private static final int SMART_CUBE_IMMERSIVE_PHASE_MIN_SP = 18;
     private static final int SMART_CUBE_IMMERSIVE_PHASE_MAX_SP = 36;
     private static final float SMART_CUBE_IMMERSIVE_PHASE_TIMER_RATIO = 0.32f;
+    private static final long SMART_CUBE_SOLVED_FINAL_MOVE_DELAY_MS = 140L;
     private static final long SMART_CUBE_RESTORE_HINT_INTERVAL_MS = 5000L;
     private static final String PERMISSION_BLUETOOTH_SCAN = "android.permission.BLUETOOTH_SCAN";
     private static final String PERMISSION_BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT";
@@ -2049,7 +2050,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         public void onSolved(final SmartCube cube) {
             if (timer.getTimerState() == DCTTimer.RUNNING) {
                 cube.calcResult();
-                cube.markSolved();
+                final int timeRes = cube.getResult();
+                final int moveCount = cube.getReconstructedMovesCount();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -2057,16 +2059,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         timer.count();
                         setVisibility(true);
                         int localTime = (int) timer.time;
-                        int timeRes = cube.getResult();
                         Log.w("dct", "smart cube solved local=" + localTime
                                 + " device=" + timeRes
                                 + " delta=" + (localTime - timeRes));
-                        int moveCount = cube.getReconstructedMovesCount();
                         tvMulPhase.setText(String.format(Locale.getDefault(), "%d moves\n%.1f tps", moveCount, timeRes > 0 ? moveCount * 1000f / timeRes : 0f));
                         Log.w("dct", "成绩 "+timeRes);
                         if (!wca || currentScramble.isBlindfoldScramble()) { penaltyTime = 0; isDNF = false;}
                         timer.setTimerState(DCTTimer.READY);
-                        saveSmartCubeTime(timeRes, cube);
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                cube.markSolved();
+                                saveSmartCubeTime(timeRes, cube);
+                            }
+                        }, SMART_CUBE_SOLVED_FINAL_MOVE_DELAY_MS);
                     }
                 });
             }
