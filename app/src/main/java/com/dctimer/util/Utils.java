@@ -574,11 +574,21 @@ public class Utils {
     }
 
     public static void addSection(Map<Integer, String> header, List<Map<String, Object>> cells, String head, String[] title, int[] type, Object[] detail, int[] progress) {
+        int[] settingIds = new int[title.length];
+        int baseId = cells.size() + 1;
+        for (int i = 0; i < settingIds.length; i++) {
+            settingIds[i] = baseId + i;
+        }
+        addSection(header, cells, head, title, type, detail, progress, settingIds);
+    }
+
+    public static void addSection(Map<Integer, String> header, List<Map<String, Object>> cells, String head, String[] title, int[] type, Object[] detail, int[] progress, int[] settingIds) {
         header.put(cells.size(), head);
         cells.add(new HashMap<String, Object>());
         for (int i = 0; i < title.length; i++) {
             //Log.w("set", cells.size()+"/"+(progress[i] >> 16)+"/"+(progress[i] & 0xffff));
             Map<String, Object> map = new HashMap<>();
+            map.put("settingId", settingIds[i]);
             map.put("title", title[i]);
             map.put("type", type[i]);
             map.put("detail", detail[i]);

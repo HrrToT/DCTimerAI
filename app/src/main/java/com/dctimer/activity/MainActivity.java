@@ -1,15 +1,7 @@
 package com.dctimer.activity;
 
 import static com.dctimer.APP.*;
-import static com.dctimer.adapter.SettingAdapter.ST_IMAGE_SIZE;
-import static com.dctimer.adapter.SettingAdapter.ST_OPACITY;
-import static com.dctimer.adapter.SettingAdapter.ST_SCR_FONT;
-import static com.dctimer.adapter.SettingAdapter.ST_SENSITIVITY;
-import static com.dctimer.adapter.SettingAdapter.ST_SMART_LAYOUT;
-import static com.dctimer.adapter.SettingAdapter.ST_SMART_ORIENTATION;
-import static com.dctimer.adapter.SettingAdapter.ST_SMART_SCRAMBLE_PROGRESS;
-import static com.dctimer.adapter.SettingAdapter.ST_START_DELAY;
-import static com.dctimer.adapter.SettingAdapter.ST_TIMER_SIZE;
+import static com.dctimer.adapter.SettingAdapter.*;
 import static scrambler.Scrambler.*;
 
 import android.Manifest;
@@ -395,34 +387,43 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Utils.addSection(headers, cells, getString(R.string.title_timer), getResources().getStringArray(R.array.item_timer),
                 new int[] {1, 1, 0, 0, 0, 0, 0, 2, 0, 1, 1, 1, 2},
                 new Object[] {wca, inspectionAlert, itemStr[13][timeFormat], itemStr[16][decimalMark], itemStr[0][enterTime], itemStr[1][timerUpdate], itemStr[2][timerAccuracy], String.format("%.02fs", freezeTime/20f), itemStr[3][multiPhase], simulateSS, showStat, dropToStop, ""},
-                new int[] {0, 0, 0, 0, 0, 0, 0, 20<<16|freezeTime, 0, 0, 0, 0, 95<<16|((int) (sensitivity *100)-5)});
+                new int[] {0, 0, 0, 0, 0, 0, 0, 20<<16|freezeTime, 0, 0, 0, 0, 95<<16|((int) (sensitivity *100)-5)},
+                new int[] {ST_WCA, ST_INSPECTION_ALERT, ST_TIME_FORMAT, ST_DECIMAL_MARK, ST_ENTER_TIME, ST_TIMER_UPDATE, ST_TIMER_ACCURACY, ST_START_DELAY, ST_MULTI_PHASE, ST_SIMULATE_SS, ST_SHOW_STATS, ST_DROP_TO_STOP, ST_SENSITIVITY});
         Utils.addSection(headers, cells, getString(R.string.title_smart), getResources().getStringArray(R.array.item_smart),
                 new int[] {0, 0, 0},
                 new Object[] {getSmartCubeOrientationLabel(smartCubeSolveOrientation), getResources().getStringArray(R.array.opt_smart_scramble_progress)[smartCubeScrambleProgressStyle],
                         getResources().getStringArray(R.array.opt_smart_layout)[smartCubeLayoutMode]},
-                new int[3]);
+                new int[3],
+                new int[] {ST_SMART_ORIENTATION, ST_SMART_SCRAMBLE_PROGRESS, ST_SMART_LAYOUT});
         Utils.addSection(headers, cells, getString(R.string.title_scramble), getResources().getStringArray(R.array.item_scramble),
                 new int[] {2, 1, 1, 2, 0},
                 new Object[] {String.valueOf(scrambleSize), monoFont, showImage, "", ""},
-                new int[] {18<<16|(scrambleSize-12), 0, 0, 16<<16|(imageSize/10-16), 0});
+                new int[] {18<<16|(scrambleSize-12), 0, 0, 16<<16|(imageSize/10-16), 0},
+                new int[] {ST_SCR_FONT, ST_MONO_SCRAMBLE, ST_SHOW_SCRAMBLE, ST_IMAGE_SIZE, ST_EG_SCRAMBLE});
         Utils.addSection(headers, cells, getString(R.string.title_stats), getResources().getStringArray(R.array.item_stats),
                 new int[] {1, 0, 0, 0, 0, 1},
                 new Object[] {promptToSave, itemStr[14][avg1Type], String.valueOf(avg1len), itemStr[4][avg2Type], String.valueOf(avg2len), selectSession},
-                new int[6]);
+                new int[6],
+                new int[] {ST_PROMPT_TO_SAVE, ST_AVG1_TYPE, ST_AVG1_LEN, ST_AVG2_TYPE, ST_AVG2_LEN, ST_SELECT_SESSION});
         Utils.addSection(headers, cells, getString(R.string.title_tools), getResources().getStringArray(R.array.item_tools),
-                new int[6], new Object[] {itemStr[5][solve333], itemStr[12][solveSq1], itemStr[6][solve222], ""}, new int[6]);
+                new int[6], new Object[] {itemStr[5][solve333], itemStr[12][solveSq1], itemStr[6][solve222], ""}, new int[6],
+                new int[] {ST_SOLVE_333, ST_SOLVE_SQ1, ST_SOLVE_222, ST_SOLVE_PYR});
         Utils.addSection(headers, cells, getString(R.string.title_scheme), getResources().getStringArray(R.array.item_scheme),
-                new int[5], new Object[] {"", "", "", "", itemStr[7][megaColorScheme]}, new int[5]);
+                new int[5], new Object[] {"", "", "", "", itemStr[7][megaColorScheme]}, new int[5],
+                new int[] {ST_SCHEME_NNN, ST_SCHEME_PYR, ST_SCHEME_SQ1, ST_SCHEME_SKEWB, ST_MEGA_SCHEME});
         Utils.addSection(headers, cells, getString(R.string.title_interface), getResources().getStringArray(R.array.item_interface),
                 new int[] {0, 2, 0, 0, 0, 1, 2, 0, 0, 0},
                 new Object[] {itemStr[8][timerFont], String.valueOf(timerSize), "", "", "", !useBgcolor, "", "", "", ""},
-                new int[] {0, 70<<16|(timerSize-50), 0, 0, 0, 0, 80<<16|(opacity-20), 0, 0, 0, 0});
+                new int[] {0, 70<<16|(timerSize-50), 0, 0, 0, 0, 80<<16|(opacity-20), 0, 0, 0, 0},
+                new int[] {ST_TIMER_FONT, ST_TIMER_SIZE, ST_BACKGROUND_COLOR, ST_TEXT_COLOR, ST_BACKGROUND_IMAGE, ST_SHOW_BACKGROUND_IMAGE, ST_OPACITY, ST_BEST_TIME_COLOR, ST_WORST_TIME_COLOR, ST_BEST_AVERAGE_COLOR});
         Utils.addSection(headers, cells, getString(R.string.title_gesture), getResources().getStringArray(R.array.item_gesture),
-                new int[4], new Object[] {itemStr[15][swipeType[0]], itemStr[15][swipeType[1]], itemStr[15][swipeType[2]], itemStr[15][swipeType[3]]}, new int[4]);
+                new int[4], new Object[] {itemStr[15][swipeType[0]], itemStr[15][swipeType[1]], itemStr[15][swipeType[2]], itemStr[15][swipeType[3]]}, new int[4],
+                new int[] {ST_GESTURE_LEFT, ST_GESTURE_RIGHT, ST_GESTURE_UP, ST_GESTURE_DOWN});
         Utils.addSection(headers, cells, getString(R.string.title_hardware), getResources().getStringArray(R.array.item_hardware),
                 new int[] {1, 0, 0, 0},
                 new Object[] {screenOn, itemStr[10][vibrateType], itemStr[11][vibrateTime], itemStr[9][screenOri]},
-                new int[4]);
+                new int[4],
+                new int[] {ST_SCREEN_ON, ST_VIBRATE, ST_VIBRATE_TIME, ST_SCREEN_ORIENTATION});
         //Log.w("dct", ""+cells.size());
         stAdapter = new SettingAdapter(this, headers, cells);
         rvSetting = findViewById(R.id.lv_settings);
@@ -1295,8 +1296,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setPref("wcainsp", false);
         }
         if (stAdapter != null) {
-            stAdapter.setCheck(1, false);
-            stAdapter.setCheck(2, false);
+            stAdapter.setCheck(ST_WCA, false);
+            stAdapter.setCheck(ST_INSPECTION_ALERT, false);
         }
         if (showToast) {
             Toast.makeText(context, R.string.smart_timer_wca_disabled, Toast.LENGTH_SHORT).show();
@@ -1901,7 +1902,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         enterTime = 0;
         bleDeviceType = BLEDevice.TYPE_UNKNOWN;
         if (stAdapter != null) {
-            stAdapter.setText(5, itemStr[0][enterTime]);
+            stAdapter.setText(ST_ENTER_TIME, itemStr[0][enterTime]);
         }
         setPref("tiway", enterTime);
         setTimerColor(APP.getTextColor());
@@ -3547,7 +3548,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    public void updatePref(int position, String detail) {
+    public void updatePref(int settingId, String detail) {
+        int position = stAdapter.getPositionBySettingId(settingId);
+        if (position < 0) return;
         View v = rvSetting.getLayoutManager().findViewByPosition(position);
         if (v == null) {
             //Log.e("dct", "view为null");
@@ -4295,7 +4298,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int mp = sessionManager.getMultiPhase(sessionIdx);
         if (mp != multiPhase) {
             multiPhase = mp;
-            stAdapter.setText(9, itemStr[3][mp]);
+            stAdapter.setText(ST_MULTI_PHASE, itemStr[3][mp]);
             tvMulPhase.setText("");
             setPref("multp", mp);
             setResultTitle();
@@ -4309,10 +4312,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             avg1len = (avg / 2000) % 1000 + 1;
             avg1Type = avg / 2000 / 1000;
             //Log.w("dct", avg1Type+"/"+avg1len+", "+avg2Type+"/"+avg2len);
-            stAdapter.setText(25, itemStr[14][avg1Type]);
-            stAdapter.setText(26, String.valueOf(avg1len));
-            stAdapter.setText(27, itemStr[4][avg2Type]);
-            stAdapter.setText(28, String.valueOf(avg2len));
+            stAdapter.setText(ST_AVG1_TYPE, itemStr[14][avg1Type]);
+            stAdapter.setText(ST_AVG1_LEN, String.valueOf(avg1len));
+            stAdapter.setText(ST_AVG2_TYPE, itemStr[4][avg2Type]);
+            stAdapter.setText(ST_AVG2_LEN, String.valueOf(avg2len));
             setPref("l1tp", avg1Type);
             setPref("l2tp", avg2Type);
             setPref("l1len", avg1len);

@@ -60,6 +60,7 @@
 ## UI 与渲染边界
 
 - 普通计时、智能魔方、蓝牙计时器可以共享基础计时页，但硬件语义必须由入口模式控制。
+- 设置页业务逻辑以稳定 `settingId` 为准；section 数组只负责展示顺序和文案，不作为点击、刷新或持久化逻辑的编号来源。
 - 智能魔方状态预览使用独立 `SmartCube3DView`，内部基于 `GLSurfaceView + OpenGL ES 2.0` 渲染 `3x3` 魔方，并允许手动拖动改变视角。
 - `SmartCube3DView` 只消费业务层传入的 `facelet` 状态和 `move` 动画指令，不直接接触 BLE 协议解析、计时状态机或成绩保存逻辑。
 - 普通打乱图继续使用 `SmartCubeImageView` 的 Canvas / Bitmap 路径。
