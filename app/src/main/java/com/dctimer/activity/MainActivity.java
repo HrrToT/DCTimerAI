@@ -4022,33 +4022,29 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             View parent = scrambleView.getParent() instanceof View ? (View) scrambleView.getParent() : frame;
             int parentWidth = parent != null && parent.getWidth() > 0 ? parent.getWidth() : dm.widthPixels;
             int parentHeight = parent != null && parent.getHeight() > 0 ? parent.getHeight() : dm.heightPixels;
-            int centerGap = Math.max(APP.getPixel(12), parentWidth / 80);
-            int timerColumnWidth = Math.min(Math.max(APP.getPixel(260), parentWidth / 4), APP.getPixel(420));
-            int cubeColumnWidth = Math.min(Math.max(APP.getPixel(300), parentWidth / 3), APP.getPixel(520));
-            int cubeHeight = Math.min((int) (parentHeight * 0.62f), (int) (cubeColumnWidth * 0.98f));
+            int rightMargin = Math.max(APP.getPixel(64), parentWidth / 14);
+            int sideWidth = Math.min(Math.max(APP.getPixel(260), parentWidth / 4), APP.getPixel(420));
+            int availableCubeWidth = Math.max(APP.getPixel(220), parentWidth - sideWidth - rightMargin - APP.getPixel(96));
+            int cubeHeight = Math.min((int) (parentHeight * 0.56f), (int) (availableCubeWidth * 0.86f));
             cubeHeight = Math.max(APP.getPixel(260), cubeHeight);
-            int cubeWidth = Math.min((int) (cubeHeight * 0.88f), cubeColumnWidth);
-            int contentWidth = cubeWidth + centerGap + timerColumnWidth;
-            int contentLeft = Math.max(0, (parentWidth - contentWidth) / 2);
+            int cubeWidth = (int) (cubeHeight * 0.88f);
             RelativeLayout.LayoutParams previewParams = new RelativeLayout.LayoutParams(cubeWidth, cubeHeight);
-            previewParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-            previewParams.addRule(RelativeLayout.CENTER_VERTICAL);
-            previewParams.setMargins(contentLeft, 0, 0, 0);
+            previewParams.addRule(RelativeLayout.CENTER_IN_PARENT);
             if (smartCube3DView != null) {
                 smartCube3DView.setLayoutParams(previewParams);
             }
             scrambleView.setLayoutParams(new RelativeLayout.LayoutParams(previewParams));
             tvScramble.setTranslationY(-APP.getPixel(SMART_CUBE_IMMERSIVE_SCRAMBLE_OFFSET_DP));
 
-            RelativeLayout.LayoutParams timerParams = new RelativeLayout.LayoutParams(timerColumnWidth, RelativeLayout.LayoutParams.WRAP_CONTENT);
-            timerParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            RelativeLayout.LayoutParams timerParams = new RelativeLayout.LayoutParams(sideWidth, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            timerParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             timerParams.addRule(RelativeLayout.CENTER_VERTICAL);
-            timerParams.setMargins(contentLeft + cubeWidth + centerGap, 0, 0, 0);
+            timerParams.setMargins(0, 0, rightMargin, 0);
             tvTimer.setLayoutParams(timerParams);
             tvTimer.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
             setTextAlignmentCompat(tvTimer, View.TEXT_ALIGNMENT_VIEW_END);
 
-            RelativeLayout.LayoutParams phaseParams = new RelativeLayout.LayoutParams(timerColumnWidth, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            RelativeLayout.LayoutParams phaseParams = new RelativeLayout.LayoutParams(sideWidth, RelativeLayout.LayoutParams.WRAP_CONTENT);
             phaseParams.addRule(RelativeLayout.BELOW, R.id.tv_timer);
             phaseParams.addRule(RelativeLayout.ALIGN_RIGHT, R.id.tv_timer);
             phaseParams.setMargins(0, APP.getPixel(12), 0, 0);
