@@ -50,9 +50,19 @@ public class SmartCubeSolveReconstruction {
     }
 
     public static SmartCubeSolveReconstruction fromRawMoves(String startFacelet, List<MoveEvent> rawMoves) {
-        List<MoveEvent> safeRawMoves = orientRawMoves(rawMoves, smartCubeSolveOrientation);
-        PhaseBuildResult phaseResult = buildPhases(Utils.orientFacelets(startFacelet, smartCubeSolveOrientation), safeRawMoves);
-        return new SmartCubeSolveReconstruction(safeRawMoves, phaseResult.reconstructedMoves, phaseResult.phases);
+        List<MoveEvent> safeRawMoves = copyRawMoves(rawMoves);
+        List<MoveEvent> displayRawMoves = orientRawMoves(safeRawMoves, smartCubeSolveOrientation);
+        PhaseBuildResult phaseResult = buildPhases(startFacelet, safeRawMoves, displayRawMoves);
+        return new SmartCubeSolveReconstruction(displayRawMoves, phaseResult.reconstructedMoves, phaseResult.phases);
+    }
+
+    private static List<MoveEvent> copyRawMoves(List<MoveEvent> rawMoves) {
+        List<MoveEvent> result = new ArrayList<>();
+        if (rawMoves == null) {
+            return result;
+        }
+        result.addAll(rawMoves);
+        return result;
     }
 
     private static List<MoveEvent> orientRawMoves(List<MoveEvent> rawMoves, int orientationIndex) {
@@ -233,13 +243,13 @@ public class SmartCubeSolveReconstruction {
         }
     }
 
-    private static PhaseBuildResult buildPhases(String startFacelet, List<MoveEvent> rawMoves) {
+    private static PhaseBuildResult buildPhases(String startFacelet, List<MoveEvent> rawMoves, List<MoveEvent> displayRawMoves) {
         if (rawMoves.isEmpty() || isEmpty(startFacelet)) {
-            return new PhaseBuildResult(reconstructMoves(rawMoves), createEmptyPhases());
+            return new PhaseBuildResult(reconstructMoves(displayRawMoves), createEmptyPhases());
         }
         CubieCube cube = new CubieCube();
         if (Util.toCubieCube(startFacelet, cube) != 0) {
-            return new PhaseBuildResult(reconstructMoves(rawMoves), createEmptyPhases());
+            return new PhaseBuildResult(reconstructMoves(displayRawMoves), createEmptyPhases());
         }
 
         List<List<MoveEvent>> statusBuckets = new ArrayList<>();
@@ -250,7 +260,7 @@ public class SmartCubeSolveReconstruction {
         int status = updatePhaseStatus(PHASE_NAMES.length, getCf4opProgress(startFacelet));
         for (int i = 0; i < rawMoves.size(); i++) {
             MoveEvent rawMove = rawMoves.get(i);
-            statusBuckets.get(status - 1).add(rawMove);
+            statusBuckets.get(status - 1).add(displayRawMoves.get(i));
             int move = rawMove.move;
             if (move >= 0 && move < 18) {
                 cube = cube.move(move);

@@ -1,5 +1,8 @@
 package com.dctimer.model;
 
+import com.dctimer.APP;
+import com.dctimer.util.Utils;
+
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -92,10 +95,38 @@ public class SmartCubeSolveReconstructionTest {
         assertEquals(5, invokeCf4opProgress(new String(facelets)));
     }
 
+    @Test
+    public void customOrientationChangesDisplayedMovesWithoutChangingPhaseDetection() {
+        int originalOrientation = APP.smartCubeSolveOrientation;
+        try {
+            APP.smartCubeSolveOrientation = findOrientation(3, 2);
+            List<SmartCubeSolveReconstruction.MoveEvent> raw = new ArrayList<>();
+            raw.add(new SmartCubeSolveReconstruction.MoveEvent(3, 0, 0));
+            raw.add(new SmartCubeSolveReconstruction.MoveEvent(0, 120, 120));
+
+            SmartCubeSolveReconstruction reconstruction = SmartCubeSolveReconstruction.fromRawMoves(SOLVED, raw);
+
+            assertEquals("L D", reconstruction.getMoveSequence());
+            assertTrue(reconstruction.getPrettySolve().contains("L D // PLL"));
+        } finally {
+            APP.smartCubeSolveOrientation = originalOrientation;
+        }
+    }
+
     private static int invokeCf4opProgress(String facelets) throws Exception {
         Method method = SmartCubeSolveReconstruction.class.getDeclaredMethod("getCf4opProgress", String.class);
         method.setAccessible(true);
         return (Integer) method.invoke(null, facelets);
+    }
+
+    private static int findOrientation(int top, int front) {
+        for (int i = 0; i < Utils.SMART_CUBE_ORIENTATION_FACES.length; i++) {
+            int[] pair = Utils.SMART_CUBE_ORIENTATION_FACES[i];
+            if (pair[0] == top && pair[1] == front) {
+                return i;
+            }
+        }
+        return 0;
     }
 
 }

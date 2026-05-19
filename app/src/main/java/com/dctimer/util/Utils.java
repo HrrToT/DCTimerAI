@@ -974,7 +974,7 @@ public class Utils {
         }
         int[] topVector = faceVector(top);
         int[] frontVector = faceVector(front);
-        int[] rightVector = cross(frontVector, topVector);
+        int[] rightVector = cross(topVector, frontVector);
         int[] faceMap = new int[6];
         for (int face = 0; face < 6; face++) {
             int[] vector = faceVector(face);
