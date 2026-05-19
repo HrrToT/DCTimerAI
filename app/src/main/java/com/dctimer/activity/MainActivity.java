@@ -196,6 +196,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private static final int ANDROID_API_S = 31;
     private static final int SMART_CUBE_CORRECTION_LIMIT = 10;
     private static final int SMART_CUBE_IMMERSIVE_MIN_SW_DP = 720;
+    private static final int SMART_CUBE_IMMERSIVE_SCRAMBLE_OFFSET_DP = 56;
+    private static final int MULTI_PHASE_DEFAULT_TEXT_SIZE_SP = 18;
+    private static final int SMART_CUBE_IMMERSIVE_PHASE_MIN_SP = 18;
+    private static final int SMART_CUBE_IMMERSIVE_PHASE_MAX_SP = 36;
+    private static final float SMART_CUBE_IMMERSIVE_PHASE_TIMER_RATIO = 0.32f;
     private static final long SMART_CUBE_RESTORE_HINT_INTERVAL_MS = 5000L;
     private static final String PERMISSION_BLUETOOTH_SCAN = "android.permission.BLUETOOTH_SCAN";
     private static final String PERMISSION_BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT";
@@ -2529,6 +2534,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         if (enterTime == i) return;
+                        boolean wasSmartCubeMode = isSmartCubeMode();
                         enterTime = i;
                         stAdapter.setText(position, itemStr[0][i]);
                         if (i < 2) {
@@ -2562,6 +2568,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                                 Toast.makeText(context, R.string.smart_timer_wca_auto_disabled, Toast.LENGTH_SHORT).show();
                             }
                             startBleScanFlow();
+                        }
+                        if (wasSmartCubeMode && !isSmartCubeMode()) {
+                            hideTimerPageCubeState();
+                            showScrambleView();
                         }
                         //else
                         setPref("tiway", i);
@@ -3792,10 +3802,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             btnLeft.setVisibility(vi);
             btnRight.setVisibility(vi);
         }
-        toolbar.setVisibility(vi);
+        toolbar.setVisibility(!v && shouldPreserveSmartCubeImmersiveLayoutSpace() ? View.INVISIBLE : vi);
         if (shouldShowTimerPageCubeState()) {
             scrambleView.setVisibility(View.GONE);
             if (smartCube3DView != null) {
+                smartCube3DView.setAlpha(1f);
                 smartCube3DView.setVisibility(View.VISIBLE);
             }
         } else if (showImage) {
@@ -3823,7 +3834,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         toolbar.setAlpha(alpha);
         scrambleView.setAlpha(alpha);
         if (smartCube3DView != null) {
-            smartCube3DView.setAlpha(alpha);
+            smartCube3DView.setAlpha(active && shouldShowTimerPageCubeState() ? 1f : alpha);
         }
         tvMulPhase.setAlpha(alpha);
         if (tvTest != null) {
@@ -3834,6 +3845,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void clearReadyHoldUiState() {
         setReadyHoldUi(false);
+    }
+
+    private boolean shouldPreserveSmartCubeImmersiveLayoutSpace() {
+        return shouldUseSmartCubeImmersiveLayout();
     }
 
     public void setBackgroundColor() {
@@ -3894,6 +3909,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void setTimerSize() {
         tvTimer.setTextSize(timerSize);
+        if (smartCubeImmersiveLayoutActive) {
+            applySmartCubeImmersivePhaseTextSize();
+        }
     }
 
     public void updateTime() {
@@ -3998,42 +4016,52 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             View parent = scrambleView.getParent() instanceof View ? (View) scrambleView.getParent() : frame;
             int parentWidth = parent != null && parent.getWidth() > 0 ? parent.getWidth() : dm.widthPixels;
             int parentHeight = parent != null && parent.getHeight() > 0 ? parent.getHeight() : dm.heightPixels;
-            int rightMargin = Math.max(APP.getPixel(64), parentWidth / 14);
-            int sideWidth = Math.min(Math.max(APP.getPixel(260), parentWidth / 4), APP.getPixel(420));
-            int availableCubeWidth = Math.max(APP.getPixel(220), parentWidth - sideWidth - rightMargin - APP.getPixel(96));
-            int cubeHeight = Math.min((int) (parentHeight * 0.56f), (int) (availableCubeWidth * 0.86f));
+            int centerGap = Math.max(APP.getPixel(12), parentWidth / 80);
+            int timerColumnWidth = Math.min(Math.max(APP.getPixel(260), parentWidth / 4), APP.getPixel(420));
+            int cubeColumnWidth = Math.min(Math.max(APP.getPixel(300), parentWidth / 3), APP.getPixel(520));
+            int cubeHeight = Math.min((int) (parentHeight * 0.62f), (int) (cubeColumnWidth * 0.98f));
             cubeHeight = Math.max(APP.getPixel(260), cubeHeight);
-            int cubeWidth = (int) (cubeHeight * 0.88f);
+            int cubeWidth = Math.min((int) (cubeHeight * 0.88f), cubeColumnWidth);
+            int contentWidth = cubeWidth + centerGap + timerColumnWidth;
+            int contentLeft = Math.max(0, (parentWidth - contentWidth) / 2);
             RelativeLayout.LayoutParams previewParams = new RelativeLayout.LayoutParams(cubeWidth, cubeHeight);
-            previewParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+            previewParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            previewParams.addRule(RelativeLayout.CENTER_VERTICAL);
+            previewParams.setMargins(contentLeft, 0, 0, 0);
             if (smartCube3DView != null) {
                 smartCube3DView.setLayoutParams(previewParams);
             }
             scrambleView.setLayoutParams(new RelativeLayout.LayoutParams(previewParams));
+            tvScramble.setTranslationY(-APP.getPixel(SMART_CUBE_IMMERSIVE_SCRAMBLE_OFFSET_DP));
 
-            RelativeLayout.LayoutParams timerParams = new RelativeLayout.LayoutParams(sideWidth, RelativeLayout.LayoutParams.WRAP_CONTENT);
-            timerParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            RelativeLayout.LayoutParams timerParams = new RelativeLayout.LayoutParams(timerColumnWidth, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            timerParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
             timerParams.addRule(RelativeLayout.CENTER_VERTICAL);
-            timerParams.setMargins(0, 0, rightMargin, 0);
+            timerParams.setMargins(contentLeft + cubeWidth + centerGap, 0, 0, 0);
             tvTimer.setLayoutParams(timerParams);
-            tvTimer.setGravity(Gravity.CENTER);
+            tvTimer.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+            setTextAlignmentCompat(tvTimer, View.TEXT_ALIGNMENT_VIEW_END);
 
-            RelativeLayout.LayoutParams phaseParams = new RelativeLayout.LayoutParams(sideWidth, RelativeLayout.LayoutParams.WRAP_CONTENT);
+            RelativeLayout.LayoutParams phaseParams = new RelativeLayout.LayoutParams(timerColumnWidth, RelativeLayout.LayoutParams.WRAP_CONTENT);
             phaseParams.addRule(RelativeLayout.BELOW, R.id.tv_timer);
             phaseParams.addRule(RelativeLayout.ALIGN_RIGHT, R.id.tv_timer);
-            phaseParams.setMargins(0, APP.getPixel(12), rightMargin, 0);
+            phaseParams.setMargins(0, APP.getPixel(12), 0, 0);
             tvMulPhase.setLayoutParams(phaseParams);
-            tvMulPhase.setGravity(Gravity.CENTER);
+            tvMulPhase.setGravity(Gravity.RIGHT);
+            setTextAlignmentCompat(tvMulPhase, View.TEXT_ALIGNMENT_VIEW_END);
+            applySmartCubeImmersivePhaseTextSize();
             smartCubeImmersiveLayoutActive = true;
             return;
         }
         if (!smartCubeImmersiveLayoutActive) {
             return;
         }
+        tvScramble.setTranslationY(0f);
         RelativeLayout.LayoutParams timerParams = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         tvTimer.setLayoutParams(timerParams);
         tvTimer.setGravity(Gravity.CENTER);
+        setTextAlignmentCompat(tvTimer, View.TEXT_ALIGNMENT_CENTER);
 
         RelativeLayout.LayoutParams phaseParams = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
@@ -4042,7 +4070,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         phaseParams.setMargins(0, 0, APP.getPixel(5), 0);
         tvMulPhase.setLayoutParams(phaseParams);
         tvMulPhase.setGravity(Gravity.RIGHT);
+        setTextAlignmentCompat(tvMulPhase, View.TEXT_ALIGNMENT_VIEW_END);
+        tvMulPhase.setTextSize(MULTI_PHASE_DEFAULT_TEXT_SIZE_SP);
         smartCubeImmersiveLayoutActive = false;
+    }
+
+    private void applySmartCubeImmersivePhaseTextSize() {
+        int phaseTextSize = Math.round(timerSize * SMART_CUBE_IMMERSIVE_PHASE_TIMER_RATIO);
+        phaseTextSize = Math.max(SMART_CUBE_IMMERSIVE_PHASE_MIN_SP,
+                Math.min(SMART_CUBE_IMMERSIVE_PHASE_MAX_SP, phaseTextSize));
+        tvMulPhase.setTextSize(phaseTextSize);
+    }
+
+    private void setTextAlignmentCompat(TextView view, int textAlignment) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            view.setTextAlignment(textAlignment);
+        }
     }
 
     private void showTimerPageCubeState(String cubeState) {
