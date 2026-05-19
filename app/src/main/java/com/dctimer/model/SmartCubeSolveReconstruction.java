@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.dctimer.APP.smartCubeSolveOrientation;
+
 import cs.min2phase.CubieCube;
 import cs.min2phase.Util;
 
@@ -48,9 +50,20 @@ public class SmartCubeSolveReconstruction {
     }
 
     public static SmartCubeSolveReconstruction fromRawMoves(String startFacelet, List<MoveEvent> rawMoves) {
-        List<MoveEvent> safeRawMoves = rawMoves == null ? new ArrayList<MoveEvent>() : new ArrayList<>(rawMoves);
-        PhaseBuildResult phaseResult = buildPhases(startFacelet, safeRawMoves);
+        List<MoveEvent> safeRawMoves = orientRawMoves(rawMoves, smartCubeSolveOrientation);
+        PhaseBuildResult phaseResult = buildPhases(Utils.orientFacelets(startFacelet, smartCubeSolveOrientation), safeRawMoves);
         return new SmartCubeSolveReconstruction(safeRawMoves, phaseResult.reconstructedMoves, phaseResult.phases);
+    }
+
+    private static List<MoveEvent> orientRawMoves(List<MoveEvent> rawMoves, int orientationIndex) {
+        List<MoveEvent> result = new ArrayList<>();
+        if (rawMoves == null) {
+            return result;
+        }
+        for (MoveEvent rawMove : rawMoves) {
+            result.add(new MoveEvent(Utils.orientSmartCubeMove(rawMove.move, orientationIndex), rawMove.deltaMs, rawMove.elapsedMs));
+        }
+        return result;
     }
 
     public String getPrettySolve() {

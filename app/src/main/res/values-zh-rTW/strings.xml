@@ -55,6 +55,7 @@
     <string name="select_smart_timer">選擇藍牙計時器</string>
     <!-- 设置 -->
     <string name="title_timer">計時</string>
+    <string name="title_smart">智能</string>
     <string name="title_scramble">轉亂</string>
     <string name="title_stats">統計</string>
     <string name="title_tools">工具</string>
@@ -73,6 +74,7 @@
     <string name="eight_sec">8秒</string>
     <string name="twelve_sec">12秒</string>
     <string name="background_color">背景顏色</string>
+    <string name="smart_cube_orientation_format">%1$s頂 / %2$s前</string>
     <!-- 提示 -->
     <string name="exit_tip">再按一次退出程式</string>
     <string name="copy_success">已複製到剪切板</string>

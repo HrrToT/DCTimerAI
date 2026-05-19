@@ -98,6 +98,8 @@ public class APP extends Application {
     public static int dataFormat;
     public static int uiMode = -1;
     public static int bleDeviceType;
+    public static int smartCubeSolveOrientation;
+    public static int smartCubeScrambleProgressStyle;
 
     @Override
     public void onCreate() {
@@ -224,6 +226,10 @@ public class APP extends Application {
         screenOri = sp.getInt("screenori", 0);	// 屏幕方向
         samplingRate = sp.getInt("srate", 44100);
         dataFormat = sp.getInt("dform", AudioFormat.ENCODING_PCM_8BIT);
+        smartCubeSolveOrientation = sp.getInt("scori", 0);
+        if (smartCubeSolveOrientation < 0 || smartCubeSolveOrientation >= 24) smartCubeSolveOrientation = 0;
+        smartCubeScrambleProgressStyle = sp.getInt("scadv", 0);
+        if (smartCubeScrambleProgressStyle < 0 || smartCubeScrambleProgressStyle > 1) smartCubeScrambleProgressStyle = 0;
     }
 
     public static void resetPref() {
@@ -246,6 +252,7 @@ public class APP extends Application {
         colors[6] = 0xff000000;
         for (int i = 0; i < 4; i++) swipeType[i] = i + 1;
         samplingRate = 44100; dataFormat = AudioFormat.ENCODING_PCM_8BIT;
+        smartCubeSolveOrientation = 0; smartCubeScrambleProgressStyle = 0;
     }
 
     public static int getPixel(int dp) {

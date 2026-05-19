@@ -5,6 +5,8 @@ import static com.dctimer.adapter.SettingAdapter.ST_IMAGE_SIZE;
 import static com.dctimer.adapter.SettingAdapter.ST_OPACITY;
 import static com.dctimer.adapter.SettingAdapter.ST_SCR_FONT;
 import static com.dctimer.adapter.SettingAdapter.ST_SENSITIVITY;
+import static com.dctimer.adapter.SettingAdapter.ST_SMART_ORIENTATION;
+import static com.dctimer.adapter.SettingAdapter.ST_SMART_SCRAMBLE_PROGRESS;
 import static com.dctimer.adapter.SettingAdapter.ST_START_DELAY;
 import static com.dctimer.adapter.SettingAdapter.ST_TIMER_SIZE;
 import static scrambler.Scrambler.*;
@@ -174,6 +176,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private final List<String> smartCubeScrambleMoves = new ArrayList<>();
     private final List<String> smartCubeScrambleStates = new ArrayList<>();
     private int smartCubeScrambleProgress;
+    private int smartCubeScrambleHiddenPrefix;
     private String smartCubeScramblePendingMove;
     private int smartCubeCorrectionBaseProgress = -1;
     private String smartCubeCorrectionBasePendingMove;
@@ -389,6 +392,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 new int[] {1, 1, 0, 0, 0, 0, 0, 2, 0, 1, 1, 1, 2},
                 new Object[] {wca, inspectionAlert, itemStr[13][timeFormat], itemStr[16][decimalMark], itemStr[0][enterTime], itemStr[1][timerUpdate], itemStr[2][timerAccuracy], String.format("%.02fs", freezeTime/20f), itemStr[3][multiPhase], simulateSS, showStat, dropToStop, ""},
                 new int[] {0, 0, 0, 0, 0, 0, 0, 20<<16|freezeTime, 0, 0, 0, 0, 95<<16|((int) (sensitivity *100)-5)});
+        Utils.addSection(headers, cells, getString(R.string.title_smart), getResources().getStringArray(R.array.item_smart),
+                new int[] {0, 0},
+                new Object[] {getSmartCubeOrientationLabel(smartCubeSolveOrientation), getResources().getStringArray(R.array.opt_smart_scramble_progress)[smartCubeScrambleProgressStyle]},
+                new int[2]);
         Utils.addSection(headers, cells, getString(R.string.title_scramble), getResources().getStringArray(R.array.item_scramble),
                 new int[] {2, 1, 1, 2, 0},
                 new Object[] {String.valueOf(scrambleSize), monoFont, showImage, "", ""},
@@ -1345,6 +1352,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void clearSmartCubeScrambleCache() {
         smartCubeScrambleCache = "";
         smartCubeScrambleProgress = 0;
+        smartCubeScrambleHiddenPrefix = 0;
         smartCubeScramblePendingMove = null;
         smartCubeScrambleMoves.clear();
         smartCubeScrambleStates.clear();
@@ -1410,11 +1418,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (progressInfo != null) {
             smartCubeScrambleProgress = progressInfo.progress;
             smartCubeScramblePendingMove = progressInfo.pendingMove;
+            if (smartCubeScrambleProgress == 0) {
+                smartCubeScrambleHiddenPrefix = 0;
+            }
             clearSmartCubeCorrectionSuggestion();
             return;
         }
         if (Utils.isSolvedIgnoringRotation(cubeState) || SOLVED_FACELET.equals(cubeState)) {
             smartCubeScrambleProgress = 0;
+            smartCubeScrambleHiddenPrefix = 0;
             smartCubeScramblePendingMove = null;
             clearSmartCubeCorrectionSuggestion();
             return;
@@ -1478,6 +1490,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return correctionBuilder;
         }
         SpannableStringBuilder builder = new SpannableStringBuilder();
+        if (smartCubeScrambleProgressStyle == 1) {
+            int doneColor = 0xffaaaaaa;
+            int displayStart = Math.max(0, Math.min(smartCubeScrambleHiddenPrefix, smartCubeScrambleMoves.size()));
+            for (int i = displayStart; i < smartCubeScrambleMoves.size(); i++) {
+                if (builder.length() > 0) builder.append(' ');
+                int start = builder.length();
+                builder.append(smartCubeScrambleMoves.get(i));
+                int end = builder.length();
+                int spanColor;
+                if (i < smartCubeScrambleProgress) {
+                    spanColor = doneColor;
+                } else if (i == smartCubeScrambleProgress && smartCubeScrambleProgress < smartCubeScrambleMoves.size()) {
+                    spanColor = nextColor;
+                } else {
+                    spanColor = baseColor;
+                }
+                builder.setSpan(new ForegroundColorSpan(spanColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            return builder;
+        }
         int startIndex = Math.max(0, smartCubeScrambleProgress);
         if (!TextUtils.isEmpty(smartCubeScramblePendingMove) && startIndex < smartCubeScrambleMoves.size()) {
             if (builder.length() > 0) builder.append(' ');
@@ -1511,6 +1543,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (smartCubeCorrectionBaseProgress < 0) {
             smartCubeCorrectionBaseProgress = Math.max(0, smartCubeScrambleProgress);
             smartCubeCorrectionBasePendingMove = smartCubeScramblePendingMove;
+            if (smartCubeScrambleProgressStyle == 1) {
+                smartCubeScrambleHiddenPrefix = Math.max(smartCubeScrambleHiddenPrefix, smartCubeCorrectionBaseProgress);
+            }
         }
         appendCombinedMove(smartCubeDeviationMoves, moveText);
         rebuildSmartCubeCorrectionMoves();
@@ -1741,7 +1776,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             btnLeft.setVisibility(View.GONE);
             btnRight.setVisibility(View.GONE);
         }
-        if (!TextUtils.equals(tvScramble.getText(), nextText)) {
+        if (nextText instanceof Spanned || !TextUtils.equals(tvScramble.getText(), nextText)) {
             tvScramble.setText(nextText);
         }
     }
@@ -2601,13 +2636,37 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 stAdapter.setCheck(position, dropToStop);
                 setPref("drop", dropToStop);
                 break;
-            case 16:    //等宽打乱字体
+            case ST_SMART_ORIENTATION:
+                new AlertDialog.Builder(context).setSingleChoiceItems(getSmartCubeOrientationLabels(), smartCubeSolveOrientation, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if (smartCubeSolveOrientation == i) return;
+                        smartCubeSolveOrientation = i;
+                        stAdapter.setText(position, getSmartCubeOrientationLabel(i));
+                        setPref("scori", i);
+                        dialogInterface.dismiss();
+                    }
+                }).setNegativeButton(R.string.btn_cancel, null).show();
+                break;
+            case ST_SMART_SCRAMBLE_PROGRESS:
+                new AlertDialog.Builder(context).setSingleChoiceItems(R.array.opt_smart_scramble_progress, smartCubeScrambleProgressStyle, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if (smartCubeScrambleProgressStyle == i) return;
+                        smartCubeScrambleProgressStyle = i;
+                        stAdapter.setText(position, getResources().getStringArray(R.array.opt_smart_scramble_progress)[i]);
+                        setPref("scadv", i);
+                        dialogInterface.dismiss();
+                    }
+                }).setNegativeButton(R.string.btn_cancel, null).show();
+                break;
+            case 19:    //等宽打乱字体
                 monoFont = !monoFont;
                 stAdapter.setCheck(position, monoFont);
                 setPref("monoscr", monoFont);
                 setScrambleFont();
                 break;
-            case 17:    //显示打乱状态
+            case 20:    //显示打乱状态
                 showImage = !showImage;
                 stAdapter.setCheck(position, showImage);
                 setPref("showscr", showImage);
@@ -2618,7 +2677,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     hideTimerPageCubeState();
                 }
                 break;
-            case 19:    //EG打乱
+            case 22:    //EG打乱
                 new AlertDialog.Builder(context).setMultiChoiceItems(R.array.opt_eg_scramble, egIdx, new DialogInterface.OnMultiChoiceClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i, boolean b) {
@@ -2634,12 +2693,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_close, null).show();
                 break;
-            case 21:    //确认时间
+            case 24:    //确认时间
                 promptToSave = !promptToSave;
                 stAdapter.setCheck(position, promptToSave);
                 setPref("conft", promptToSave);
                 break;
-            case 22:	//滚动平均1类型
+            case 25:	//滚动平均1类型
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[14], avg1Type, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -2665,7 +2724,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 24:    //滚动平均2类型
+            case 27:    //滚动平均2类型
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[4], avg2Type, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -2691,13 +2750,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 23:    //平均1长度
-            case 25:    //平均2长度
+            case 26:    //平均1长度
+            case 28:    //平均2长度
                 LayoutInflater factory = LayoutInflater.from(context);
                 int layoutId = R.layout.dialog_input;
                 view = factory.inflate(layoutId, null);
                 editText = view.findViewById(R.id.edit_text);
-                editText.setText(String.valueOf(position==23 ? avg1len : avg2len));
+                editText.setText(String.valueOf(position==26 ? avg1len : avg2len));
                 editText.setSelection(editText.getText().length());
                 new AlertDialog.Builder(context).setTitle(R.string.enter_length).setView(view)
                         .setPositiveButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
@@ -2710,7 +2769,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                                     Toast.makeText(context, getString(R.string.invalid_input), Toast.LENGTH_LONG).show();
                                     return;
                                 }
-                                if (position == 23) {
+                                if (position == 26) {
                                     avg1len = len;
                                     setPref("l1len", len);
                                 } else {
@@ -2739,15 +2798,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).show();
                 Utils.showKeyboard(editText);
                 break;
-            case 26:	//自动选择分组
+            case 29:	//自动选择分组
                 selectSession = !selectSession;
                 stAdapter.setCheck(position, selectSession);
                 setPref("selses", selectSession);
                 break;
-            case 28:    //三阶求解
+            case 31:    //三阶求解
                 Cube333SolverDialog.newInstance(position).show(getSupportFragmentManager(), "333Solver");
                 break;
-            case 29:    //SQ1复形
+            case 32:    //SQ1复形
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[12], solveSq1, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -2781,10 +2840,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 30:    //二阶求解
+            case 33:    //二阶求解
                 Cube222SolverDialog.newInstance(position).show(getSupportFragmentManager(), "222Solver");
                 break;
-            case 31:    //Pyraminx V求解
+            case 34:    //Pyraminx V求解
                 final boolean[] chks = new boolean[4];
                 for (int i=0; i<4; i++)
                     chks[i] = (((solvePyr >> i) & 1) != 0);
@@ -2821,7 +2880,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).setNegativeButton(R.string.btn_close, null).show();
                 break;
             //配色设置
-            case 33:    //n阶
+            case 36:    //n阶
                 int[] cs = {sp.getInt("csn1", Color.YELLOW), sp.getInt("csn2", Color.BLUE), sp.getInt("csn3", Color.RED),
                         sp.getInt("csn4", Color.WHITE), sp.getInt("csn5", 0xff009900), sp.getInt("csn6", 0xffff9900)};
                 colorSchemeView = new ColorSchemeView(this, APP.getPixel(290), cs, 1);
@@ -2843,7 +2902,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 });
                 break;
-            case 34:    //金字塔
+            case 37:    //金字塔
                 cs = new int[] {sp.getInt("csp1", Color.RED), sp.getInt("csp2", 0xff009900),
                         sp.getInt("csp3", Color.BLUE), sp.getInt("csp4", Color.YELLOW)};
                 colorSchemeView = new ColorSchemeView(this, (int) (dpi * 290), cs, 2);
@@ -2863,7 +2922,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 });
                 break;
-            case 35:    //SQ1
+            case 38:    //SQ1
                 cs = new int[] {sp.getInt("csq1", Color.WHITE), sp.getInt("csq2", 0xffff9900), sp.getInt("csq3", 0xff009900),
                         sp.getInt("csq4", Color.YELLOW), sp.getInt("csq5", Color.RED), sp.getInt("csq6", Color.BLUE)};
                 colorSchemeView = new ColorSchemeView(this, (int) (dpi * 290), cs, 3);
@@ -2883,7 +2942,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 });
                 break;
-            case 36:    //skewb
+            case 39:    //skewb
                 cs = new int[] {sp.getInt("csw1", Color.YELLOW), sp.getInt("csw2", Color.BLUE), sp.getInt("csw3", Color.RED),
                         sp.getInt("csw4", Color.WHITE), sp.getInt("csw5", 0xff009900), sp.getInt("csw6", 0xffff9900)};
                 colorSchemeView = new ColorSchemeView(this, (int) (dpi * 290), cs, 4);
@@ -2903,7 +2962,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 });
                 break;
-            case 37:    //五魔
+            case 40:    //五魔
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[7], megaColorScheme, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -2916,7 +2975,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
             //界面设置
-            case 39:    //计时器字体
+            case 42:    //计时器字体
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[8], timerFont, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -2929,7 +2988,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 41:    //背景颜色
+            case 44:    //背景颜色
                 AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(context);
                 View dialogLayout = LayoutInflater.from(context).inflate(R.layout.dialog_color_picker, null);
                 RadioGroup rgMode = dialogLayout.findViewById(R.id.rg_mode);
@@ -3030,7 +3089,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 });
                 dialogBuilder.show();
                 break;
-            case 42:    //文字颜色
+            case 45:    //文字颜色
                 new ColorPickerDialog(context, new int[] {colors[1], colors[6]}, new int[] {-1, -1}, false, new OnColorPickerListener() {
                     @Override
                     public void onColorCancel(ColorPickerDialog dialog) { }
@@ -3061,10 +3120,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).show();
                 break;
-            case 43:    //背景图片
+            case 46:    //背景图片
                 selectPic();
                 break;
-            case 44:    //显示背景图
+            case 47:    //显示背景图
                 if (useBgcolor) {
                     setBackground();
                 } else setBackgroundColor();
@@ -3073,7 +3132,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 stAdapter.setCheck(position, !useBgcolor);
                 setPref("bgcolor", useBgcolor);
                 break;
-            case 46:    //最快单次颜色
+            case 49:    //最快单次颜色
                 new ColorPickerDialog(context, new int[] {colors[2]}, new int[] {0xffff00ff}, true, new OnColorPickerListener() {
                     @Override
                     public void onColorCancel(ColorPickerDialog dialog) { }
@@ -3097,7 +3156,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).show();
                 break;
-            case 47:    //最慢单次颜色
+            case 50:    //最慢单次颜色
                 new ColorPickerDialog(context, new int[] {colors[3]}, new int[] {0xffee3333}, true, new OnColorPickerListener() {
                     @Override
                     public void onColorCancel(ColorPickerDialog dialog) { }
@@ -3121,7 +3180,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).show();
                 break;
-            case 48:    //最快平均颜色
+            case 51:    //最快平均颜色
                 new ColorPickerDialog(context, new int[] {colors[4]}, new int[] {0xff009900}, true, new OnColorPickerListener() {
                     @Override
                     public void onColorCancel(ColorPickerDialog dialog) { }
@@ -3146,7 +3205,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).show();
                 break;
             //手势管理
-            case 50:    //左
+            case 53:    //左
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[15], swipeType[0], new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3158,7 +3217,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 51:    //右
+            case 54:    //右
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[15], swipeType[1], new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3170,7 +3229,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 52:    //上
+            case 55:    //上
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[15], swipeType[2], new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3182,7 +3241,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 53:    //下
+            case 56:    //下
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[15], swipeType[3], new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3195,7 +3254,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
             //硬件设置
-            case 55:    //屏幕常亮
+            case 58:    //屏幕常亮
                 if (screenOn) {
                     if (timer.getTimerState() != 1) releaseWakeLock();
                 } else acquireWakeLock();
@@ -3203,7 +3262,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 stAdapter.setCheck(position, screenOn);
                 setPref("scron", screenOn);
                 break;
-            case 56:    //触感反馈
+            case 59:    //触感反馈
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[10], vibrateType, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3215,7 +3274,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 57:    //触感时间
+            case 60:    //触感时间
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[11], vibrateTime, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3227,7 +3286,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
                 break;
-            case 58:    //屏幕方向
+            case 61:    //屏幕方向
                 new AlertDialog.Builder(context).setSingleChoiceItems(ITEMS_ID[9], screenOri, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -3414,6 +3473,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void updateSettingList(int position, String text) {
         stAdapter.setText(position, text);
+    }
+
+    public String getSmartCubeOrientationLabel(int orientationIndex) {
+        String[] faces = getResources().getStringArray(R.array.opt_smart_cube_faces);
+        int[] pair = Utils.getSmartCubeOrientationPair(orientationIndex);
+        return getString(R.string.smart_cube_orientation_format, faces[pair[0]], faces[pair[1]]);
+    }
+
+    private String[] getSmartCubeOrientationLabels() {
+        String[] labels = new String[Utils.SMART_CUBE_ORIENTATION_FACES.length];
+        for (int i = 0; i < labels.length; i++) {
+            labels[i] = getSmartCubeOrientationLabel(i);
+        }
+        return labels;
     }
 
     public void updatePref(int position, int progress) {
@@ -4151,10 +4224,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             avg1len = (avg / 2000) % 1000 + 1;
             avg1Type = avg / 2000 / 1000;
             //Log.w("dct", avg1Type+"/"+avg1len+", "+avg2Type+"/"+avg2len);
-            stAdapter.setText(22, itemStr[14][avg1Type]);
-            stAdapter.setText(23, String.valueOf(avg1len));
-            stAdapter.setText(24, itemStr[4][avg2Type]);
-            stAdapter.setText(25, String.valueOf(avg2len));
+            stAdapter.setText(25, itemStr[14][avg1Type]);
+            stAdapter.setText(26, String.valueOf(avg1len));
+            stAdapter.setText(27, itemStr[4][avg2Type]);
+            stAdapter.setText(28, String.valueOf(avg2len));
             setPref("l1tp", avg1Type);
             setPref("l2tp", avg2Type);
             setPref("l1len", avg1len);

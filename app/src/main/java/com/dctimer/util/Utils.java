@@ -40,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 public class Utils {
     static String egOllAll = "PHUTLSA";
     private static final String SOLVED_FACELET = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
+    public static final int[][] SMART_CUBE_ORIENTATION_FACES = createSmartCubeOrientationFaces();
     private static final Sticker[] STICKERS = createStickers();
 
     public static int grayScale(int color) {
@@ -908,6 +909,148 @@ public class Utils {
 
     public static boolean isSolvedIgnoringRotation(String state) {
         return isSameStateIgnoringRotation(state, SOLVED_FACELET);
+    }
+
+    public static String orientFacelets(String facelets, int orientationIndex) {
+        if (facelets == null || facelets.length() < 54) {
+            return facelets;
+        }
+        int[] faceMap = getSmartCubeFaceMap(orientationIndex);
+        if (faceMap == null) {
+            return facelets;
+        }
+        char[] oriented = new char[54];
+        for (int i = 0; i < STICKERS.length; i++) {
+            Sticker sticker = STICKERS[i];
+            int face = sticker.sourceIndex / 9;
+            int newFace = faceMap[face];
+            int[] normal = faceVector(newFace);
+            int[] right = faceRightVector(newFace);
+            int[] up = faceUpVector(newFace);
+            int x = dot(sticker.x, sticker.y, sticker.z, right[0], right[1], right[2]);
+            int y = dot(sticker.x, sticker.y, sticker.z, up[0], up[1], up[2]);
+            int z = dot(sticker.x, sticker.y, sticker.z, normal[0], normal[1], normal[2]);
+            int row = 1 - y;
+            int col = x + 1;
+            oriented[newFace * 9 + row * 3 + col] = facelets.charAt(i);
+        }
+        return new String(oriented);
+    }
+
+    public static int orientSmartCubeMove(int move, int orientationIndex) {
+        if (move < 0 || move >= 18) {
+            return move;
+        }
+        int[] faceMap = getSmartCubeFaceMap(orientationIndex);
+        if (faceMap == null) {
+            return move;
+        }
+        return faceMap[move / 3] * 3 + move % 3;
+    }
+
+    public static int[] getSmartCubeOrientationPair(int orientationIndex) {
+        if (orientationIndex < 0 || orientationIndex >= SMART_CUBE_ORIENTATION_FACES.length) {
+            orientationIndex = 0;
+        }
+        return SMART_CUBE_ORIENTATION_FACES[orientationIndex];
+    }
+
+    private static int[] getSmartCubeFaceMap(int orientationIndex) {
+        int[] pair = getSmartCubeOrientationPair(orientationIndex);
+        int top = pair[0];
+        int front = pair[1];
+        if (top == front || getOppositeFace(top) == front) {
+            return null;
+        }
+        int[] topVector = faceVector(top);
+        int[] frontVector = faceVector(front);
+        int[] rightVector = cross(frontVector, topVector);
+        int[] faceMap = new int[6];
+        for (int face = 0; face < 6; face++) {
+            int[] vector = faceVector(face);
+            if (dot(vector, topVector) == 1) faceMap[face] = 0;
+            else if (dot(vector, rightVector) == 1) faceMap[face] = 1;
+            else if (dot(vector, frontVector) == 1) faceMap[face] = 2;
+            else if (dot(vector, topVector) == -1) faceMap[face] = 3;
+            else if (dot(vector, rightVector) == -1) faceMap[face] = 4;
+            else faceMap[face] = 5;
+        }
+        return faceMap;
+    }
+
+    private static int[][] createSmartCubeOrientationFaces() {
+        List<int[]> pairs = new ArrayList<>();
+        pairs.add(new int[] {0, 2});
+        for (int top = 0; top < 6; top++) {
+            for (int front = 0; front < 6; front++) {
+                if (top == front || getOppositeFace(top) == front || (top == 0 && front == 2)) {
+                    continue;
+                }
+                pairs.add(new int[] {top, front});
+            }
+        }
+        return pairs.toArray(new int[pairs.size()][]);
+    }
+
+    private static int getOppositeFace(int face) {
+        switch (face) {
+            case 0: return 3;
+            case 1: return 4;
+            case 2: return 5;
+            case 3: return 0;
+            case 4: return 1;
+            default: return 2;
+        }
+    }
+
+    private static int[] faceVector(int face) {
+        switch (face) {
+            case 0: return new int[] {0, 1, 0};
+            case 1: return new int[] {1, 0, 0};
+            case 2: return new int[] {0, 0, 1};
+            case 3: return new int[] {0, -1, 0};
+            case 4: return new int[] {-1, 0, 0};
+            default: return new int[] {0, 0, -1};
+        }
+    }
+
+    private static int[] faceRightVector(int face) {
+        switch (face) {
+            case 0: return new int[] {1, 0, 0};
+            case 1: return new int[] {0, 0, -1};
+            case 2: return new int[] {1, 0, 0};
+            case 3: return new int[] {1, 0, 0};
+            case 4: return new int[] {0, 0, 1};
+            default: return new int[] {-1, 0, 0};
+        }
+    }
+
+    private static int[] faceUpVector(int face) {
+        switch (face) {
+            case 0: return new int[] {0, 0, -1};
+            case 1:
+            case 2:
+            case 4:
+            case 5:
+                return new int[] {0, 1, 0};
+            default: return new int[] {0, 0, 1};
+        }
+    }
+
+    private static int dot(int[] a, int[] b) {
+        return dot(a[0], a[1], a[2], b[0], b[1], b[2]);
+    }
+
+    private static int dot(int x1, int y1, int z1, int x2, int y2, int z2) {
+        return x1 * x2 + y1 * y2 + z1 * z2;
+    }
+
+    private static int[] cross(int[] a, int[] b) {
+        return new int[] {
+                a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0]
+        };
     }
 
     private static String rotateFaceletX(String facelets) {

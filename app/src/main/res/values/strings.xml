@@ -58,6 +58,7 @@
     <string name="select_smart_timer">Select Bluetooth timer</string>
     <!-- Settings -->
     <string name="title_timer">TIMER</string>
+    <string name="title_smart">SMART</string>
     <string name="title_scramble">SCRAMBLE</string>
     <string name="title_stats">STATISTICS</string>
     <string name="title_tools">TOOLS</string>
@@ -77,6 +78,7 @@
     <string name="background_color">Background color</string>
     <string name="light_mode">Light</string>
     <string name="dark_mode">Dark</string>
+    <string name="smart_cube_orientation_format">%1$s top / %2$s front</string>
     <!-- Message -->
     <string name="exit_tip">Press again to exit.</string>
     <string name="copy_success">Copy to clipboard successfully.</string>
