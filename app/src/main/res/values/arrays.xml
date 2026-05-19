@@ -397,7 +397,7 @@
 
     <array name="opt_smart_layout">
         <item>Default</item>
-        <item>Immersive</item>
+        <item>Immersive (for large-screen devices 10 inches and above)</item>
     </array>
 
     <array name="item_stats">

@@ -315,6 +315,7 @@
     <array name="item_smart">
         <item>解法欄位生成基準</item>
         <item>轉亂推進樣式</item>
+        <item>佈局</item>
     </array>
 
     <array name="item_scramble">
@@ -337,6 +338,11 @@
     <array name="opt_smart_scramble_progress">
         <item>已推進自動消失</item>
         <item>已推進變淺保留</item>
+    </array>
+
+    <array name="opt_smart_layout">
+        <item>預設</item>
+        <item>沉浸式（適用於10吋及以上大螢幕裝置）</item>
     </array>
 
     <array name="item_stats">

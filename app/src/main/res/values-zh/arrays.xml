@@ -342,7 +342,7 @@
 
     <array name="opt_smart_layout">
         <item>默认</item>
-        <item>沉浸式</item>
+        <item>沉浸式（适用于10寸及以上大屏设备）</item>
     </array>
 
     <array name="item_stats">
