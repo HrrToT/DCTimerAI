@@ -32,6 +32,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.AppCompatTextView;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.text.Editable;
@@ -183,6 +184,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private boolean pendingAutoOrientationResetAfterCubeReady;
     private boolean pendingBleDialogAfterPermission;
     private boolean pendingBleScanAfterPermission;
+    private AlertDialog smartCubeLogoDialog;
 
     private Stackmat stackmat;
     private BluetoothTools bluetoothTools;
@@ -408,50 +410,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         //设置
         Map<Integer, String> headers = new HashMap<>();
         List<Map<String, Object>> cells = new ArrayList<>();
-        Utils.addSection(headers, cells, getString(R.string.title_timer), getResources().getStringArray(R.array.item_timer),
-                new int[] {1, 1, 0, 0, 0, 0, 0, 2, 0, 1, 1, 1, 2},
-                new Object[] {wca, inspectionAlert, itemStr[13][timeFormat], itemStr[16][decimalMark], itemStr[0][enterTime], itemStr[1][timerUpdate], itemStr[2][timerAccuracy], String.format("%.02fs", freezeTime/20f), itemStr[3][multiPhase], simulateSS, showStat, dropToStop, ""},
-                new int[] {0, 0, 0, 0, 0, 0, 0, 20<<16|freezeTime, 0, 0, 0, 0, 95<<16|((int) (sensitivity *100)-5)},
-                new int[] {ST_WCA, ST_INSPECTION_ALERT, ST_TIME_FORMAT, ST_DECIMAL_MARK, ST_ENTER_TIME, ST_TIMER_UPDATE, ST_TIMER_ACCURACY, ST_START_DELAY, ST_MULTI_PHASE, ST_SIMULATE_SS, ST_SHOW_STATS, ST_DROP_TO_STOP, ST_SENSITIVITY});
-        Utils.addSection(headers, cells, getString(R.string.title_smart), getResources().getStringArray(R.array.item_smart),
-                new int[] {0, 0, 0, 1, 1, 1, 0, 0},
-                new Object[] {getSmartCubeOrientationLabel(smartCubeSolveOrientation), getResources().getStringArray(R.array.opt_smart_scramble_progress)[smartCubeScrambleProgressStyle],
-                        getResources().getStringArray(R.array.opt_smart_layout)[smartCubeLayoutMode], APP.smartModeAutoOpenConnectDialog,
-                        APP.smartModeTapTimerToConnect, APP.smartModeAutoResetOrientation, "",
-                        getSmartCubeLogoSettingLabel()},
-                new int[8],
-                new int[] {ST_SMART_ORIENTATION, ST_SMART_SCRAMBLE_PROGRESS, ST_SMART_LAYOUT,
-                        ST_SMART_MODE_AUTO_CONNECT, ST_SMART_MODE_TAP_TO_CONNECT, ST_SMART_MODE_AUTO_RESET_ORIENTATION,
-                        ST_SMART_MODE_RESET_SOLVED, ST_SMART_MODE_CENTER_LOGO});
-        Utils.addSection(headers, cells, getString(R.string.title_scramble), getResources().getStringArray(R.array.item_scramble),
-                new int[] {2, 1, 1, 2, 0},
-                new Object[] {String.valueOf(scrambleSize), monoFont, showImage, "", ""},
-                new int[] {18<<16|(scrambleSize-12), 0, 0, 16<<16|(imageSize/10-16), 0},
-                new int[] {ST_SCR_FONT, ST_MONO_SCRAMBLE, ST_SHOW_SCRAMBLE, ST_IMAGE_SIZE, ST_EG_SCRAMBLE});
-        Utils.addSection(headers, cells, getString(R.string.title_stats), getResources().getStringArray(R.array.item_stats),
-                new int[] {1, 0, 0, 0, 0, 1},
-                new Object[] {promptToSave, itemStr[14][avg1Type], String.valueOf(avg1len), itemStr[4][avg2Type], String.valueOf(avg2len), selectSession},
-                new int[6],
-                new int[] {ST_PROMPT_TO_SAVE, ST_AVG1_TYPE, ST_AVG1_LEN, ST_AVG2_TYPE, ST_AVG2_LEN, ST_SELECT_SESSION});
-        Utils.addSection(headers, cells, getString(R.string.title_tools), getResources().getStringArray(R.array.item_tools),
-                new int[6], new Object[] {itemStr[5][solve333], itemStr[12][solveSq1], itemStr[6][solve222], ""}, new int[6],
-                new int[] {ST_SOLVE_333, ST_SOLVE_SQ1, ST_SOLVE_222, ST_SOLVE_PYR});
-        Utils.addSection(headers, cells, getString(R.string.title_scheme), getResources().getStringArray(R.array.item_scheme),
-                new int[5], new Object[] {"", "", "", "", itemStr[7][megaColorScheme]}, new int[5],
-                new int[] {ST_SCHEME_NNN, ST_SCHEME_PYR, ST_SCHEME_SQ1, ST_SCHEME_SKEWB, ST_MEGA_SCHEME});
-        Utils.addSection(headers, cells, getString(R.string.title_interface), getResources().getStringArray(R.array.item_interface),
-                new int[] {0, 2, 0, 0, 0, 1, 2, 0, 0, 0},
-                new Object[] {itemStr[8][timerFont], String.valueOf(timerSize), "", "", "", !useBgcolor, "", "", "", ""},
-                new int[] {0, 70<<16|(timerSize-50), 0, 0, 0, 0, 80<<16|(opacity-20), 0, 0, 0, 0},
-                new int[] {ST_TIMER_FONT, ST_TIMER_SIZE, ST_BACKGROUND_COLOR, ST_TEXT_COLOR, ST_BACKGROUND_IMAGE, ST_SHOW_BACKGROUND_IMAGE, ST_OPACITY, ST_BEST_TIME_COLOR, ST_WORST_TIME_COLOR, ST_BEST_AVERAGE_COLOR});
-        Utils.addSection(headers, cells, getString(R.string.title_gesture), getResources().getStringArray(R.array.item_gesture),
-                new int[4], new Object[] {itemStr[15][swipeType[0]], itemStr[15][swipeType[1]], itemStr[15][swipeType[2]], itemStr[15][swipeType[3]]}, new int[4],
-                new int[] {ST_GESTURE_LEFT, ST_GESTURE_RIGHT, ST_GESTURE_UP, ST_GESTURE_DOWN});
-        Utils.addSection(headers, cells, getString(R.string.title_hardware), getResources().getStringArray(R.array.item_hardware),
-                new int[] {1, 0, 0, 0},
-                new Object[] {screenOn, itemStr[10][vibrateType], itemStr[11][vibrateTime], itemStr[9][screenOri]},
-                new int[4],
-                new int[] {ST_SCREEN_ON, ST_VIBRATE, ST_VIBRATE_TIME, ST_SCREEN_ORIENTATION});
+        buildSettingSections(headers, cells);
         //Log.w("dct", ""+cells.size());
         stAdapter = new SettingAdapter(this, headers, cells);
         rvSetting = findViewById(R.id.lv_settings);
@@ -2092,7 +2051,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return getString(R.string.smart_cube_logo_none);
         }
         if (APP.smartCubeLogoMode == SmartCubeLogoProvider.MODE_CUSTOM && SmartCubeLogoProvider.hasCustomLogo()) {
-            return getString(R.string.smart_cube_logo_use_custom);
+            int customSlot = SmartCubeLogoProvider.resolveCustomLogoSlot(APP.smartCubeLogoUri);
+            if (customSlot > 0) {
+                return SmartCubeLogoProvider.getCustomLogoLabel(this, customSlot);
+            }
         }
         if (SmartCubeLogoProvider.BUILTIN_HTT.equals(APP.smartCubeLogoBuiltinId)) {
             return getString(R.string.smart_cube_logo_builtin_htt);
@@ -2104,66 +2066,113 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     public void showSmartCubeLogoOptions() {
-        final ArrayList<CharSequence> labels = new ArrayList<>();
-        final ArrayList<Integer> actions = new ArrayList<>();
-        final ArrayList<String> values = new ArrayList<>();
-
-        labels.add(getString(R.string.smart_cube_logo_none));
-        actions.add(SmartCubeLogoProvider.MODE_NONE);
-        values.add("");
-
-        labels.add(getString(R.string.smart_cube_logo_builtin_ai));
-        actions.add(SmartCubeLogoProvider.MODE_BUILTIN);
-        values.add(SmartCubeLogoProvider.BUILTIN_DCTIMER_AI);
-
-        labels.add(getString(R.string.smart_cube_logo_builtin_htt));
-        actions.add(SmartCubeLogoProvider.MODE_BUILTIN);
-        values.add(SmartCubeLogoProvider.BUILTIN_HTT);
-
-        labels.add(getString(R.string.smart_cube_logo_builtin_cube));
-        actions.add(SmartCubeLogoProvider.MODE_BUILTIN);
-        values.add(SmartCubeLogoProvider.BUILTIN_CUBE);
-
-        if (SmartCubeLogoProvider.hasCustomLogo()) {
-            labels.add(getString(R.string.smart_cube_logo_use_custom));
-            actions.add(SmartCubeLogoProvider.MODE_CUSTOM);
-            values.add(APP.smartCubeLogoUri);
-        }
-
-        labels.add(getString(R.string.smart_cube_logo_upload_custom));
-        actions.add(-1);
-        values.add("");
-
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.smart_cube_logo_title)
-                .setItems(labels.toArray(new CharSequence[0]), new DialogInterface.OnClickListener() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_smart_cube_logo_picker, null);
+        RecyclerView recyclerView = dialogView.findViewById(R.id.rv_logo_options);
+        TextView titleView = dialogView.findViewById(R.id.tv_logo_title);
+        titleView.setText(R.string.smart_cube_logo_title);
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
+        recyclerView.setAdapter(new SmartCubeLogoOptionAdapter(buildSmartCubeLogoOptions(),
+                new SmartCubeLogoOptionAdapter.OnOptionClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialogInterface, int which) {
-                        int action = actions.get(which);
-                        String value = values.get(which);
-                        if (action == -1) {
+                    public void onOptionClick(SmartCubeLogoOption option) {
+                        if (option == null) {
+                            return;
+                        }
+                        if (option.optionType == SmartCubeLogoOption.TYPE_UPLOAD) {
+                            if (smartCubeLogoDialog != null) {
+                                smartCubeLogoDialog.dismiss();
+                            }
                             openSmartCubeLogoPicker();
                             return;
                         }
-                        if (action == SmartCubeLogoProvider.MODE_NONE) {
-                            APP.smartCubeLogoMode = SmartCubeLogoProvider.MODE_NONE;
-                            setPref("smartcubelogomode", APP.smartCubeLogoMode);
-                        } else if (action == SmartCubeLogoProvider.MODE_BUILTIN) {
-                            APP.smartCubeLogoMode = SmartCubeLogoProvider.MODE_BUILTIN;
-                            APP.smartCubeLogoBuiltinId = value;
-                            setPref("smartcubelogomode", APP.smartCubeLogoMode);
-                            setPref("smartcubelogobuiltin", APP.smartCubeLogoBuiltinId);
-                        } else if (action == SmartCubeLogoProvider.MODE_CUSTOM && !TextUtils.isEmpty(value)) {
-                            APP.smartCubeLogoMode = SmartCubeLogoProvider.MODE_CUSTOM;
-                            APP.smartCubeLogoUri = value;
-                            setPref("smartcubelogomode", APP.smartCubeLogoMode);
-                            setPref("smartcubelogouri", APP.smartCubeLogoUri);
+                        applySmartCubeLogoOption(option);
+                        if (smartCubeLogoDialog != null) {
+                            smartCubeLogoDialog.dismiss();
                         }
-                        refreshSmartCubeLogoViews();
-                        Toast.makeText(context, R.string.smart_cube_logo_applied, Toast.LENGTH_SHORT).show();
                     }
-                })
-                .show();
+                }));
+        smartCubeLogoDialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setNegativeButton(R.string.btn_close, null)
+                .create();
+        smartCubeLogoDialog.show();
+    }
+
+    private List<SmartCubeLogoOption> buildSmartCubeLogoOptions() {
+        ArrayList<SmartCubeLogoOption> options = new ArrayList<>();
+        List<SmartCubeLogoProvider.CustomLogoEntry> customEntries = SmartCubeLogoProvider.getCustomLogoEntries(this);
+        if (APP.smartCubeLogoMode == SmartCubeLogoProvider.MODE_CUSTOM
+                && SmartCubeLogoProvider.resolveCustomLogoSlot(APP.smartCubeLogoUri) < 0
+                && !customEntries.isEmpty()
+                && APP.smartCubeLogoUri != null
+                && APP.smartCubeLogoUri.contains("custom_logo.png")) {
+            APP.smartCubeLogoUri = customEntries.get(0).uri;
+            setPref("smartcubelogouri", APP.smartCubeLogoUri);
+        }
+        options.add(new SmartCubeLogoOption(SmartCubeLogoOption.TYPE_NONE,
+                getString(R.string.smart_cube_logo_none_short),
+                "",
+                SmartCubeLogoProvider.createNonePreviewBitmap(),
+                APP.smartCubeLogoMode == SmartCubeLogoProvider.MODE_NONE));
+        options.add(new SmartCubeLogoOption(SmartCubeLogoOption.TYPE_BUILTIN,
+                getString(R.string.smart_cube_logo_builtin_ai_short),
+                SmartCubeLogoProvider.BUILTIN_DCTIMER_AI,
+                SmartCubeLogoProvider.loadBuiltinLogoBitmap(SmartCubeLogoProvider.BUILTIN_DCTIMER_AI),
+                APP.smartCubeLogoMode == SmartCubeLogoProvider.MODE_BUILTIN
+                        && TextUtils.equals(APP.smartCubeLogoBuiltinId, SmartCubeLogoProvider.BUILTIN_DCTIMER_AI)));
+        options.add(new SmartCubeLogoOption(SmartCubeLogoOption.TYPE_BUILTIN,
+                getString(R.string.smart_cube_logo_builtin_htt_short),
+                SmartCubeLogoProvider.BUILTIN_HTT,
+                SmartCubeLogoProvider.loadBuiltinLogoBitmap(SmartCubeLogoProvider.BUILTIN_HTT),
+                APP.smartCubeLogoMode == SmartCubeLogoProvider.MODE_BUILTIN
+                        && TextUtils.equals(APP.smartCubeLogoBuiltinId, SmartCubeLogoProvider.BUILTIN_HTT)));
+        options.add(new SmartCubeLogoOption(SmartCubeLogoOption.TYPE_BUILTIN,
+                getString(R.string.smart_cube_logo_builtin_cube_short),
+                SmartCubeLogoProvider.BUILTIN_CUBE,
+                SmartCubeLogoProvider.loadBuiltinLogoBitmap(SmartCubeLogoProvider.BUILTIN_CUBE),
+                APP.smartCubeLogoMode == SmartCubeLogoProvider.MODE_BUILTIN
+                        && TextUtils.equals(APP.smartCubeLogoBuiltinId, SmartCubeLogoProvider.BUILTIN_CUBE)));
+        for (SmartCubeLogoProvider.CustomLogoEntry entry : customEntries) {
+            Bitmap previewBitmap;
+            try {
+                previewBitmap = SmartCubeLogoProvider.loadCustomLogoPreviewBitmap(this, entry.uri);
+            } catch (IOException e) {
+                previewBitmap = null;
+            }
+            options.add(new SmartCubeLogoOption(SmartCubeLogoOption.TYPE_CUSTOM,
+                    SmartCubeLogoProvider.getCustomLogoLabel(this, entry.slot),
+                    entry.uri,
+                    previewBitmap,
+                    APP.smartCubeLogoMode == SmartCubeLogoProvider.MODE_CUSTOM
+                            && TextUtils.equals(APP.smartCubeLogoUri, entry.uri)));
+        }
+        options.add(new SmartCubeLogoOption(SmartCubeLogoOption.TYPE_UPLOAD,
+                getString(R.string.smart_cube_logo_upload_short),
+                "",
+                SmartCubeLogoProvider.createUploadPreviewBitmap(),
+                false));
+        return options;
+    }
+
+    private void applySmartCubeLogoOption(SmartCubeLogoOption option) {
+        if (option.optionType == SmartCubeLogoOption.TYPE_NONE) {
+            APP.smartCubeLogoMode = SmartCubeLogoProvider.MODE_NONE;
+            setPref("smartcubelogomode", APP.smartCubeLogoMode);
+        } else if (option.optionType == SmartCubeLogoOption.TYPE_BUILTIN) {
+            APP.smartCubeLogoMode = SmartCubeLogoProvider.MODE_BUILTIN;
+            APP.smartCubeLogoBuiltinId = option.value;
+            setPref("smartcubelogomode", APP.smartCubeLogoMode);
+            setPref("smartcubelogobuiltin", APP.smartCubeLogoBuiltinId);
+        } else if (option.optionType == SmartCubeLogoOption.TYPE_CUSTOM && !TextUtils.isEmpty(option.value)) {
+            APP.smartCubeLogoMode = SmartCubeLogoProvider.MODE_CUSTOM;
+            APP.smartCubeLogoUri = option.value;
+            setPref("smartcubelogomode", APP.smartCubeLogoMode);
+            setPref("smartcubelogouri", APP.smartCubeLogoUri);
+        } else {
+            return;
+        }
+        refreshSmartCubeLogoViews();
+        Toast.makeText(context, R.string.smart_cube_logo_applied, Toast.LENGTH_SHORT).show();
     }
 
     public void refreshSmartCubeLogoViews() {
@@ -2176,6 +2185,84 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
         if (stAdapter != null) {
             stAdapter.setText(ST_SMART_MODE_CENTER_LOGO, getSmartCubeLogoSettingLabel());
+        }
+    }
+
+    private static class SmartCubeLogoOption {
+        static final int TYPE_NONE = 0;
+        static final int TYPE_BUILTIN = 1;
+        static final int TYPE_CUSTOM = 2;
+        static final int TYPE_UPLOAD = 3;
+
+        final int optionType;
+        final String label;
+        final String value;
+        final Bitmap previewBitmap;
+        final boolean selected;
+
+        SmartCubeLogoOption(int optionType, String label, String value, Bitmap previewBitmap, boolean selected) {
+            this.optionType = optionType;
+            this.label = label;
+            this.value = value;
+            this.previewBitmap = previewBitmap;
+            this.selected = selected;
+        }
+    }
+
+    private static class SmartCubeLogoOptionViewHolder extends RecyclerView.ViewHolder {
+        final ImageView previewView;
+        final TextView labelView;
+        final View ringView;
+
+        SmartCubeLogoOptionViewHolder(View itemView) {
+            super(itemView);
+            previewView = itemView.findViewById(R.id.iv_logo_preview);
+            labelView = itemView.findViewById(R.id.tv_logo_label);
+            ringView = itemView.findViewById(R.id.view_logo_ring);
+        }
+    }
+
+    private static class SmartCubeLogoOptionAdapter extends RecyclerView.Adapter<SmartCubeLogoOptionViewHolder> {
+        interface OnOptionClickListener {
+            void onOptionClick(SmartCubeLogoOption option);
+        }
+
+        private final List<SmartCubeLogoOption> options;
+        private final OnOptionClickListener listener;
+
+        SmartCubeLogoOptionAdapter(List<SmartCubeLogoOption> options, OnOptionClickListener listener) {
+            this.options = options;
+            this.listener = listener;
+        }
+
+        @Override
+        public SmartCubeLogoOptionViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_smart_cube_logo_option, parent, false);
+            return new SmartCubeLogoOptionViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(SmartCubeLogoOptionViewHolder holder, int position) {
+            final SmartCubeLogoOption option = options.get(position);
+            holder.labelView.setText(option.label);
+            holder.previewView.setImageBitmap(option.previewBitmap);
+            holder.ringView.setBackgroundResource(option.selected
+                    ? R.drawable.smart_cube_logo_option_selected_bg
+                    : R.drawable.smart_cube_logo_option_bg);
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (listener != null) {
+                        listener.onOptionClick(option);
+                    }
+                }
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return options.size();
         }
     }
 
@@ -3845,6 +3932,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     @Override
                     public void onClick(DialogInterface arg0, int arg1) {
                         APP.resetPref();
+                        SmartCubeLogoProvider.clearLogoData(MainActivity.this);
                         removePref();
                         setBackgroundColor();
                         //setPrimaryDark();
@@ -3857,6 +3945,89 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         releaseWakeLock();
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
+    }
+
+    private void buildSettingSections(Map<Integer, String> headers, List<Map<String, Object>> cells) {
+        addSmartSettingsSection(headers, cells);
+        addTimerSettingsSection(headers, cells);
+        addScrambleSettingsSection(headers, cells);
+        addStatsSettingsSection(headers, cells);
+        addToolsSettingsSection(headers, cells);
+        addSchemeSettingsSection(headers, cells);
+        addInterfaceSettingsSection(headers, cells);
+        addGestureSettingsSection(headers, cells);
+        addHardwareSettingsSection(headers, cells);
+    }
+
+    private void addSmartSettingsSection(Map<Integer, String> headers, List<Map<String, Object>> cells) {
+        Utils.addSection(headers, cells, getString(R.string.title_smart), getResources().getStringArray(R.array.item_smart),
+                new int[] {0, 0, 0, 1, 1, 1, 0, 0},
+                new Object[] {getSmartCubeOrientationLabel(smartCubeSolveOrientation), getResources().getStringArray(R.array.opt_smart_scramble_progress)[smartCubeScrambleProgressStyle],
+                        getResources().getStringArray(R.array.opt_smart_layout)[smartCubeLayoutMode], APP.smartModeAutoOpenConnectDialog,
+                        APP.smartModeTapTimerToConnect, APP.smartModeAutoResetOrientation, "",
+                        getSmartCubeLogoSettingLabel()},
+                new int[8],
+                new int[] {ST_SMART_ORIENTATION, ST_SMART_SCRAMBLE_PROGRESS, ST_SMART_LAYOUT,
+                        ST_SMART_MODE_AUTO_CONNECT, ST_SMART_MODE_TAP_TO_CONNECT, ST_SMART_MODE_AUTO_RESET_ORIENTATION,
+                        ST_SMART_MODE_RESET_SOLVED, ST_SMART_MODE_CENTER_LOGO});
+    }
+
+    private void addTimerSettingsSection(Map<Integer, String> headers, List<Map<String, Object>> cells) {
+        Utils.addSection(headers, cells, getString(R.string.title_timer), getResources().getStringArray(R.array.item_timer),
+                new int[] {1, 1, 0, 0, 0, 0, 0, 2, 0, 1, 1, 1, 2},
+                new Object[] {wca, inspectionAlert, itemStr[13][timeFormat], itemStr[16][decimalMark], itemStr[0][enterTime], itemStr[1][timerUpdate], itemStr[2][timerAccuracy], String.format("%.02fs", freezeTime/20f), itemStr[3][multiPhase], simulateSS, showStat, dropToStop, ""},
+                new int[] {0, 0, 0, 0, 0, 0, 0, 20<<16|freezeTime, 0, 0, 0, 0, 95<<16|((int) (sensitivity *100)-5)},
+                new int[] {ST_WCA, ST_INSPECTION_ALERT, ST_TIME_FORMAT, ST_DECIMAL_MARK, ST_ENTER_TIME, ST_TIMER_UPDATE, ST_TIMER_ACCURACY, ST_START_DELAY, ST_MULTI_PHASE, ST_SIMULATE_SS, ST_SHOW_STATS, ST_DROP_TO_STOP, ST_SENSITIVITY});
+    }
+
+    private void addScrambleSettingsSection(Map<Integer, String> headers, List<Map<String, Object>> cells) {
+        Utils.addSection(headers, cells, getString(R.string.title_scramble), getResources().getStringArray(R.array.item_scramble),
+                new int[] {2, 1, 1, 2, 0},
+                new Object[] {String.valueOf(scrambleSize), monoFont, showImage, "", ""},
+                new int[] {18<<16|(scrambleSize-12), 0, 0, 16<<16|(imageSize/10-16), 0},
+                new int[] {ST_SCR_FONT, ST_MONO_SCRAMBLE, ST_SHOW_SCRAMBLE, ST_IMAGE_SIZE, ST_EG_SCRAMBLE});
+    }
+
+    private void addStatsSettingsSection(Map<Integer, String> headers, List<Map<String, Object>> cells) {
+        Utils.addSection(headers, cells, getString(R.string.title_stats), getResources().getStringArray(R.array.item_stats),
+                new int[] {1, 0, 0, 0, 0, 1},
+                new Object[] {promptToSave, itemStr[14][avg1Type], String.valueOf(avg1len), itemStr[4][avg2Type], String.valueOf(avg2len), selectSession},
+                new int[6],
+                new int[] {ST_PROMPT_TO_SAVE, ST_AVG1_TYPE, ST_AVG1_LEN, ST_AVG2_TYPE, ST_AVG2_LEN, ST_SELECT_SESSION});
+    }
+
+    private void addToolsSettingsSection(Map<Integer, String> headers, List<Map<String, Object>> cells) {
+        Utils.addSection(headers, cells, getString(R.string.title_tools), getResources().getStringArray(R.array.item_tools),
+                new int[6], new Object[] {itemStr[5][solve333], itemStr[12][solveSq1], itemStr[6][solve222], ""}, new int[6],
+                new int[] {ST_SOLVE_333, ST_SOLVE_SQ1, ST_SOLVE_222, ST_SOLVE_PYR});
+    }
+
+    private void addSchemeSettingsSection(Map<Integer, String> headers, List<Map<String, Object>> cells) {
+        Utils.addSection(headers, cells, getString(R.string.title_scheme), getResources().getStringArray(R.array.item_scheme),
+                new int[5], new Object[] {"", "", "", "", itemStr[7][megaColorScheme]}, new int[5],
+                new int[] {ST_SCHEME_NNN, ST_SCHEME_PYR, ST_SCHEME_SQ1, ST_SCHEME_SKEWB, ST_MEGA_SCHEME});
+    }
+
+    private void addInterfaceSettingsSection(Map<Integer, String> headers, List<Map<String, Object>> cells) {
+        Utils.addSection(headers, cells, getString(R.string.title_interface), getResources().getStringArray(R.array.item_interface),
+                new int[] {0, 2, 0, 0, 0, 1, 2, 0, 0, 0},
+                new Object[] {itemStr[8][timerFont], String.valueOf(timerSize), "", "", "", !useBgcolor, "", "", "", ""},
+                new int[] {0, 70<<16|(timerSize-50), 0, 0, 0, 0, 80<<16|(opacity-20), 0, 0, 0, 0},
+                new int[] {ST_TIMER_FONT, ST_TIMER_SIZE, ST_BACKGROUND_COLOR, ST_TEXT_COLOR, ST_BACKGROUND_IMAGE, ST_SHOW_BACKGROUND_IMAGE, ST_OPACITY, ST_BEST_TIME_COLOR, ST_WORST_TIME_COLOR, ST_BEST_AVERAGE_COLOR});
+    }
+
+    private void addGestureSettingsSection(Map<Integer, String> headers, List<Map<String, Object>> cells) {
+        Utils.addSection(headers, cells, getString(R.string.title_gesture), getResources().getStringArray(R.array.item_gesture),
+                new int[4], new Object[] {itemStr[15][swipeType[0]], itemStr[15][swipeType[1]], itemStr[15][swipeType[2]], itemStr[15][swipeType[3]]}, new int[4],
+                new int[] {ST_GESTURE_LEFT, ST_GESTURE_RIGHT, ST_GESTURE_UP, ST_GESTURE_DOWN});
+    }
+
+    private void addHardwareSettingsSection(Map<Integer, String> headers, List<Map<String, Object>> cells) {
+        Utils.addSection(headers, cells, getString(R.string.title_hardware), getResources().getStringArray(R.array.item_hardware),
+                new int[] {1, 0, 0, 0},
+                new Object[] {screenOn, itemStr[10][vibrateType], itemStr[11][vibrateTime], itemStr[9][screenOri]},
+                new int[4],
+                new int[] {ST_SCREEN_ON, ST_VIBRATE, ST_VIBRATE_TIME, ST_SCREEN_ORIENTATION});
     }
 
     @SuppressLint("HandlerLeak")
@@ -3977,6 +4148,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         edit.remove("screenori");   edit.remove("resultorder");
         edit.remove("smartcubelogomode"); edit.remove("smartcubelogobuiltin");
         edit.remove("smartcubelogouri");
+        edit.remove("smartcubelogonextslot");
         edit.remove("smartmodeautoconnect"); edit.remove("smartmodetaptoconnect");
         edit.remove("smartmodeautoorireset");
         edit.apply();

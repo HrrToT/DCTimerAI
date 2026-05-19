@@ -177,6 +177,12 @@
     <string name="smart_cube_logo_upload_failed">Unable to load this image</string>
     <string name="smart_cube_auto_orientation_reset_hint">Orientation reset automatically to white top, green front</string>
     <string name="smart_cube_logo_crop_title">Move and scale the logo to fit the white center</string>
+    <string name="smart_cube_logo_none_short">NoLogo</string>
+    <string name="smart_cube_logo_upload_short">UploadLogo</string>
+    <string name="smart_cube_logo_builtin_ai_short">DCTimerAI</string>
+    <string name="smart_cube_logo_builtin_htt_short">Hu Tutu</string>
+    <string name="smart_cube_logo_builtin_cube_short">Cube</string>
+    <string name="smart_cube_logo_custom_slot">Custom %1$d</string>
     <string name="delete_items">Delete selected items?</string>
     <string name="solve_none">None</string>
     <string name="cube2_face">Face</string>

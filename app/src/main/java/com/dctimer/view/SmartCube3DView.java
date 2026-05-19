@@ -281,7 +281,7 @@ public class SmartCube3DView extends GLSurfaceView {
         private static final float CUBIE_EDGE_OUTER_RADIUS = 0.07f;
         private static final float CUBIE_EDGE_CENTER_RADIUS = 0.30f;
         private static final float CUBIE_CENTER_FACE_RADIUS = 0.40f;
-        private static final float CENTER_LOGO_HALF = 0.232f;
+        private static final float CENTER_LOGO_HALF = 0.372f;
         private static final float CENTER_LOGO_OFFSET = 0.012f;
         private static final int ROUNDED_CORNER_SEGMENTS = 5;
         private static final int ROUNDED_RECT_POINT_COUNT = (ROUNDED_CORNER_SEGMENTS + 1) * 4;
@@ -745,12 +745,12 @@ public class SmartCube3DView extends GLSurfaceView {
             Vec3 p1 = center.add(u.scale(halfWidth)).add(v.scale(-halfHeight));
             Vec3 p2 = center.add(u.scale(halfWidth)).add(v.scale(halfHeight));
             Vec3 p3 = center.add(u.scale(-halfWidth)).add(v.scale(halfHeight));
-            putTexturedVertex(p0, 0f, 1f, 0);
-            putTexturedVertex(p1, 1f, 1f, 5);
-            putTexturedVertex(p2, 1f, 0f, 10);
-            putTexturedVertex(p0, 0f, 1f, 15);
-            putTexturedVertex(p2, 1f, 0f, 20);
-            putTexturedVertex(p3, 0f, 0f, 25);
+            putTexturedVertex(p0, 0f, 0f, 0);
+            putTexturedVertex(p1, 1f, 0f, 5);
+            putTexturedVertex(p2, 1f, 1f, 10);
+            putTexturedVertex(p0, 0f, 0f, 15);
+            putTexturedVertex(p2, 1f, 1f, 20);
+            putTexturedVertex(p3, 0f, 1f, 25);
 
             texturedQuadBuffer.clear();
             texturedQuadBuffer.put(texturedQuad, 0, texturedQuad.length);

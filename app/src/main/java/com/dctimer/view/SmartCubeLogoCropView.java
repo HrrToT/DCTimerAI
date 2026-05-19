@@ -91,7 +91,7 @@ public class SmartCubeLogoCropView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        float padding = Math.min(w, h) * 0.08f;
+        float padding = Math.min(w, h) * 0.045f;
         float diameter = Math.min(w, h) - padding * 2f;
         cropCircleBounds.set((w - diameter) / 2f, (h - diameter) / 2f,
                 (w + diameter) / 2f, (h + diameter) / 2f);

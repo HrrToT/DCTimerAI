@@ -79,10 +79,10 @@ public class SmartCubeLogoCropActivity extends AppCompatActivity {
             if (croppedBitmap == null) {
                 throw new IllegalStateException("cropped bitmap is null");
             }
-            String outputUri = SmartCubeLogoProvider.saveCustomLogoBitmap(this, croppedBitmap);
+            SmartCubeLogoProvider.SavedCustomLogo savedLogo = SmartCubeLogoProvider.saveNextCustomLogoBitmap(this, croppedBitmap);
             croppedBitmap.recycle();
             android.content.Intent data = new android.content.Intent();
-            data.putExtra(EXTRA_OUTPUT_URI, outputUri);
+            data.putExtra(EXTRA_OUTPUT_URI, savedLogo.uri);
             setResult(RESULT_OK, data);
             finish();
         } catch (Exception e) {

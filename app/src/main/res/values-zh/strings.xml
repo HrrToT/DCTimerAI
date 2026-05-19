@@ -237,4 +237,10 @@
     <string name="title_smart_mode">智能模式</string>
     <string name="smart_cube_auto_orientation_reset_hint">已自动重置姿态，默认白顶绿前</string>
     <string name="smart_cube_logo_crop_title">拖动和缩放 Logo，使其尽量铺满白色中心块</string>
+    <string name="smart_cube_logo_none_short">无Logo</string>
+    <string name="smart_cube_logo_upload_short">上传Logo</string>
+    <string name="smart_cube_logo_builtin_ai_short">DCTimerAI</string>
+    <string name="smart_cube_logo_builtin_htt_short">胡图图</string>
+    <string name="smart_cube_logo_builtin_cube_short">Cube</string>
+    <string name="smart_cube_logo_custom_slot">自定义%1$d</string>
 </resources>
