@@ -6,7 +6,7 @@
 
 - 软件名称：`DCTimer-BLE`
 - 当前版本：`2.2.4`
-- Android 包名：`com.dctimer.ble`
+- Android 包名：`com.dctimer.ai`
 - APK 输出名：`DCTimer-BLE-v2.2.4.apk`
 - 更新检查：App 内“关于”弹窗读取 `https://dctimer.huizhi.ink/update.json`，发现新版后打开 `apkUrl` 下载；不做 App 内下载和安装。
 

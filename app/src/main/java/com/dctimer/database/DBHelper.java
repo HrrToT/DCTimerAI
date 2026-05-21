@@ -176,6 +176,22 @@ public class DBHelper extends SQLiteOpenHelper {
         db.insert(TBL_NAME[sid], null, values);
     }
 
+    public void prepareResultInsert(int sid) {
+        if (db == null) db = getWritableDatabase();
+        String sql;
+        if (sid >= 15) {
+            sql = "select max(id) from " + TBL_NAME[15];
+        } else {
+            sql = "select max(id) from " + TBL_NAME[sid];
+        }
+        Cursor c = db.rawQuery(sql, null);
+        lastId = 0;
+        if (c.moveToFirst() && !c.isNull(0)) {
+            lastId = c.getInt(0);
+        }
+        c.close();
+    }
+
     public Cursor getResult(int id) {
         if (db == null) db = getWritableDatabase();
         if (id < 15)

@@ -2,6 +2,8 @@ package com.dctimer.util;
 
 import android.util.Log;
 
+import static com.dctimer.APP.SORT_DATE_ASC;
+import static com.dctimer.APP.SORT_DATE_DESC;
 import static com.dctimer.APP.SORT_LATEST_FIRST;
 import static com.dctimer.APP.sortType;
 import static com.dctimer.APP.timerAccuracy;
@@ -10,7 +12,10 @@ import static com.dctimer.util.StringUtils.timeToString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Locale;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import com.dctimer.APP;
 import com.dctimer.model.Result;
@@ -347,8 +352,9 @@ public class Stats {
             sortIdx = new int[len * 3 / 2];
         }
         for (int i = 0; i < len; i++) sortIdx[i] = i;
-        if (sortType == SORT_LATEST_FIRST) {
-            for (int i = 0; i < len; i++) sortIdx[i] = len - 1 - i;
+        if (sortType == SORT_DATE_DESC || sortType == SORT_DATE_ASC || sortType == SORT_LATEST_FIRST) {
+            int[] sorted = buildDateSortedIndex(result.getDates(), sortType != SORT_DATE_ASC);
+            for (int i = 0; i < len; i++) sortIdx[i] = sorted[i];
             return;
         }
         if (sortType < 0) {
@@ -430,5 +436,41 @@ public class Stats {
         if (result.isDnf(pos))
             return Integer.MAX_VALUE;
         return arr[pos] + (result.getPenalty(pos) == 1 ? 2000 : 0);
+    }
+
+    static int[] buildDateSortedIndex(String[] dates, final boolean newestFirst) {
+        Integer[] idx = new Integer[dates.length];
+        final long[] sortKeys = new long[dates.length];
+        for (int i = 0; i < dates.length; i++) {
+            idx[i] = i;
+            sortKeys[i] = parseDateSortKey(dates[i]);
+        }
+        Arrays.sort(idx, new Comparator<Integer>() {
+            @Override
+            public int compare(Integer left, Integer right) {
+                long leftKey = sortKeys[left];
+                long rightKey = sortKeys[right];
+                if (leftKey != rightKey) {
+                    return newestFirst ? Long.compare(rightKey, leftKey) : Long.compare(leftKey, rightKey);
+                }
+                return newestFirst ? right - left : left - right;
+            }
+        });
+        int[] sorted = new int[dates.length];
+        for (int i = 0; i < dates.length; i++) sorted[i] = idx[i];
+        return sorted;
+    }
+
+    static long parseDateSortKey(String dateText) {
+        if (dateText == null) return Long.MIN_VALUE;
+        String normalized = dateText.trim();
+        if (normalized.length() == 0) return Long.MIN_VALUE;
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+        try {
+            Date date = formatter.parse(normalized);
+            return date == null ? Long.MIN_VALUE : date.getTime();
+        } catch (ParseException ignored) {
+            return Long.MIN_VALUE;
+        }
     }
 }

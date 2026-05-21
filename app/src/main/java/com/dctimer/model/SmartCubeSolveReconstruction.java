@@ -12,16 +12,14 @@ import cs.min2phase.CubieCube;
 import cs.min2phase.Util;
 
 public class SmartCubeSolveReconstruction {
-    private static final int SLICE_COMBO_WINDOW_MS = 100;
     private static final String SOLVED_FACELET = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
     private static final String PRETTY_FACES = "URFDLBEMS";
     private static final String SUFFIXES = " 2'";
     private static final String[] PHASE_NAMES = {"Cross", "F2L 1", "F2L 2", "F2L 3", "F2L 4", "OLL", "PLL"};
-
-    private static final int[][] CENTER_ROT = {
-            {0, 2, 4, 3, 5, 1}, // y'
-            {5, 1, 0, 2, 4, 3}, // x'
-            {4, 0, 2, 1, 3, 5}  // z
+    private static final int[][] SLICE_FACE_PAIRS = {
+            {0, 3}, // E: U + D'
+            {4, 1}, // M: L + R'
+            {2, 5}  // S: F + B'
     };
 
     private static final int[][] CROSS_MASK = toEqus("----U--------R--R-----F--F--D-DDD-D-----L--L-----B--B-");
@@ -34,26 +32,36 @@ public class SmartCubeSolveReconstruction {
     private static final int[][] SOLVED_MASK = toEqus(SOLVED_FACELET);
 
     private final List<MoveEvent> rawMoves;
-    private final List<PrettyMove> reconstructedMoves;
+    private final List<PrettyMove> physicalMoves;
+    private final List<PrettyMove> displayMoves;
+    private final List<ReplayStep> replaySteps;
     private final List<Phase> phases;
     private final String prettySolve;
     private final String moveSequence;
+    private final String physicalMoveSequence;
     private final int moveCount;
 
-    private SmartCubeSolveReconstruction(List<MoveEvent> rawMoves, List<PrettyMove> reconstructedMoves, List<Phase> phases) {
+    private SmartCubeSolveReconstruction(List<MoveEvent> rawMoves, List<PrettyMove> physicalMoves, List<ReplayStep> replaySteps, List<Phase> phases) {
         this.rawMoves = rawMoves;
-        this.reconstructedMoves = reconstructedMoves;
+        this.physicalMoves = physicalMoves;
+        this.replaySteps = replaySteps;
+        this.displayMoves = extractDisplayMoves(replaySteps);
         this.phases = phases;
-        this.prettySolve = buildPrettySolve(phases, reconstructedMoves);
-        this.moveSequence = buildMoveSequence(reconstructedMoves);
-        this.moveCount = countNonRotationMoves(reconstructedMoves);
+        this.prettySolve = buildPrettySolve(phases, this.displayMoves);
+        this.moveSequence = buildMoveSequence(this.displayMoves);
+        this.physicalMoveSequence = buildMoveSequence(physicalMoves);
+        this.moveCount = countNonRotationMoves(this.displayMoves);
     }
 
     public static SmartCubeSolveReconstruction fromRawMoves(String startFacelet, List<MoveEvent> rawMoves) {
         List<MoveEvent> safeRawMoves = copyRawMoves(rawMoves);
         List<MoveEvent> displayRawMoves = orientRawMoves(safeRawMoves, smartCubeSolveOrientation);
-        PhaseBuildResult phaseResult = buildPhases(startFacelet, safeRawMoves, displayRawMoves);
-        return new SmartCubeSolveReconstruction(displayRawMoves, phaseResult.reconstructedMoves, phaseResult.phases);
+        int[] phaseByRawIndex = buildPhaseByRawIndex(startFacelet, safeRawMoves);
+        List<PrettyMove> physicalMoves = reconstructPhysicalMoves(displayRawMoves, phaseByRawIndex);
+        List<ReplayStep> replaySteps = buildReplaySteps(physicalMoves);
+        List<Phase> phases = hasPhaseData(phaseByRawIndex)
+                ? buildPhasesFromReplaySteps(replaySteps) : createEmptyPhases();
+        return new SmartCubeSolveReconstruction(displayRawMoves, physicalMoves, replaySteps, phases);
     }
 
     private static List<MoveEvent> copyRawMoves(List<MoveEvent> rawMoves) {
@@ -88,6 +96,10 @@ public class SmartCubeSolveReconstruction {
         return moveSequence;
     }
 
+    public String getPhysicalMoveSequence() {
+        return physicalMoveSequence;
+    }
+
     public int getMoveCount() {
         return moveCount;
     }
@@ -95,7 +107,7 @@ public class SmartCubeSolveReconstruction {
     public String toJson(int solveTimeMs) {
         StringBuilder sb = new StringBuilder();
         sb.append('{');
-        appendJsonField(sb, "version", "1");
+        appendJsonField(sb, "version", "2");
         sb.append(',');
         appendJsonField(sb, "method", "333-smart-cf4op");
         sb.append(',');
@@ -103,7 +115,20 @@ public class SmartCubeSolveReconstruction {
         sb.append(',');
         sb.append("\"solveTimeMs\":").append(Math.max(0, solveTimeMs));
         sb.append(',');
+        sb.append("\"moveDeltas\":[");
+        for (int i = 0; i < rawMoves.size(); i++) {
+            if (i > 0) sb.append(',');
+            sb.append(rawMoves.get(i).deltaMs);
+        }
+        sb.append(']');
+        sb.append(',');
         appendJsonField(sb, "moves", moveSequence);
+        sb.append(',');
+        appendJsonField(sb, "physicalMoves", physicalMoveSequence);
+        sb.append(',');
+        appendJsonField(sb, "displayMoves", moveSequence);
+        sb.append(',');
+        appendDisplayStepsJson(sb);
         sb.append(',');
         appendJsonField(sb, "prettySolve", getPrettySolve(solveTimeMs));
         sb.append(',');
@@ -115,6 +140,16 @@ public class SmartCubeSolveReconstruction {
             appendJsonField(sb, "name", phase.name);
             sb.append(',');
             sb.append("\"moveCount\":").append(phase.moveCount);
+            sb.append(',');
+            sb.append("\"physicalMoveCount\":").append(phase.physicalMoveCount);
+            sb.append(',');
+            sb.append("\"displayStart\":").append(phase.displayStart);
+            sb.append(',');
+            sb.append("\"displayEnd\":").append(phase.displayEnd);
+            sb.append(',');
+            sb.append("\"physicalStart\":").append(phase.physicalStart);
+            sb.append(',');
+            sb.append("\"physicalEnd\":").append(phase.physicalEnd);
             sb.append(',');
             sb.append("\"startMs\":").append(phase.startMs);
             sb.append(',');
@@ -147,18 +182,28 @@ public class SmartCubeSolveReconstruction {
         int endRawIndex;
         int startMs;
         int endMs;
+        int phaseIndex;
 
         PrettyMove(int axis, int pow, int startRawIndex, int endRawIndex, int startMs, int endMs) {
+            this(axis, pow, startRawIndex, endRawIndex, startMs, endMs, -1);
+        }
+
+        PrettyMove(int axis, int pow, int startRawIndex, int endRawIndex, int startMs, int endMs, int phaseIndex) {
             this.axis = axis;
             this.pow = pow;
             this.startRawIndex = startRawIndex;
             this.endRawIndex = endRawIndex;
             this.startMs = startMs;
             this.endMs = endMs;
+            this.phaseIndex = phaseIndex;
         }
 
         String notation() {
             return String.valueOf(PRETTY_FACES.charAt(axis)) + SUFFIXES.charAt(pow);
+        }
+
+        PrettyMove copy() {
+            return new PrettyMove(axis, pow, startRawIndex, endRawIndex, startMs, endMs, phaseIndex);
         }
 
         boolean isRotation() {
@@ -170,15 +215,41 @@ public class SmartCubeSolveReconstruction {
         final String name;
         final String moves;
         final int moveCount;
+        final int physicalMoveCount;
+        final int displayStart;
+        final int displayEnd;
+        final int physicalStart;
+        final int physicalEnd;
         final int startMs;
         final int endMs;
 
         Phase(String name, String moves, int moveCount, int startMs, int endMs) {
+            this(name, moves, moveCount, 0, -1, -1, -1, -1, startMs, endMs);
+        }
+
+        Phase(String name, String moves, int moveCount, int physicalMoveCount,
+              int displayStart, int displayEnd, int physicalStart, int physicalEnd,
+              int startMs, int endMs) {
             this.name = name;
             this.moves = moves;
             this.moveCount = moveCount;
+            this.physicalMoveCount = physicalMoveCount;
+            this.displayStart = displayStart;
+            this.displayEnd = displayEnd;
+            this.physicalStart = physicalStart;
+            this.physicalEnd = physicalEnd;
             this.startMs = startMs;
             this.endMs = endMs;
+        }
+    }
+
+    private static class ReplayStep {
+        final PrettyMove displayMove;
+        final List<PrettyMove> physicalMoves;
+
+        ReplayStep(PrettyMove displayMove, List<PrettyMove> physicalMoves) {
+            this.displayMove = displayMove;
+            this.physicalMoves = physicalMoves;
         }
     }
 
@@ -192,44 +263,133 @@ public class SmartCubeSolveReconstruction {
         }
     }
 
-    private static List<PrettyMove> reconstructMoves(List<MoveEvent> rawMoves) {
+    private static int[] buildPhaseByRawIndex(String startFacelet, List<MoveEvent> rawMoves) {
+        int[] phaseByRawIndex = new int[rawMoves.size()];
+        for (int i = 0; i < phaseByRawIndex.length; i++) {
+            phaseByRawIndex[i] = -1;
+        }
+        if (rawMoves.isEmpty() || isEmpty(startFacelet)) {
+            return phaseByRawIndex;
+        }
+        CubieCube cube = new CubieCube();
+        if (Util.toCubieCube(startFacelet, cube) != 0) {
+            return phaseByRawIndex;
+        }
+
+        int status = updatePhaseStatus(PHASE_NAMES.length, getCf4opProgress(startFacelet));
+        for (int i = 0; i < rawMoves.size(); i++) {
+            phaseByRawIndex[i] = PHASE_NAMES.length - status;
+            int move = rawMoves.get(i).move;
+            if (move >= 0 && move < 18) {
+                cube = cube.move(move);
+            }
+            status = updatePhaseStatus(status, getCf4opProgress(Util.toFaceCube(cube)));
+        }
+        return phaseByRawIndex;
+    }
+
+    private static boolean hasPhaseData(int[] phaseByRawIndex) {
+        for (int phaseIndex : phaseByRawIndex) {
+            if (phaseIndex >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<PrettyMove> reconstructPhysicalMoves(List<MoveEvent> rawMoves) {
+        return reconstructPhysicalMoves(rawMoves, null);
+    }
+
+    private static List<PrettyMove> reconstructPhysicalMoves(List<MoveEvent> rawMoves, int[] phaseByRawIndex) {
         List<PrettyMove> ret = new ArrayList<>();
-        int[] center = {0, 1, 2, 3, 4, 5};
         for (int i = 0; i < rawMoves.size(); i++) {
             MoveEvent current = rawMoves.get(i);
-            int axis = indexOf(center, current.move / 3);
+            int axis = current.move / 3;
             int pow = current.move % 3;
-            if (axis < 0) {
+            if (axis < 0 || axis >= PRETTY_FACES.length()) {
                 continue;
             }
-            if (i < rawMoves.size() - 1) {
-                MoveEvent next = rawMoves.get(i + 1);
-                int gap = next.elapsedMs - current.elapsedMs;
-                int axis2 = indexOf(center, next.move / 3);
-                int pow2 = next.move % 3;
-                if (gap <= SLICE_COMBO_WINDOW_MS
-                        && axis2 >= 0
-                        && axis != axis2
-                        && axis % 3 == axis2 % 3
-                        && pow + pow2 == 2) {
-                    int axisM = axis % 3;
-                    int powM = (pow - 1) * new int[] {1, 1, -1, -1, -1, 1}[axis] + 1;
-                    pushMove(ret, axisM + 6, powM, i, i + 1, current.elapsedMs, next.elapsedMs);
-                    for (int p = 0; p < powM + 1; p++) {
-                        center = rotateCenter(center, axisM);
-                    }
-                    i++;
-                    continue;
-                }
-            }
-            pushMove(ret, axis, pow, i, i, current.elapsedMs, current.elapsedMs);
+            int phaseIndex = phaseByRawIndex != null && i < phaseByRawIndex.length ? phaseByRawIndex[i] : -1;
+            pushMove(ret, axis, pow, i, i, current.elapsedMs, current.elapsedMs, phaseIndex);
         }
         return ret;
     }
 
-    private static void pushMove(List<PrettyMove> moves, int axis, int pow, int startRawIndex, int endRawIndex, int startMs, int endMs) {
-        if (moves.isEmpty() || moves.get(moves.size() - 1).axis != axis) {
-            moves.add(new PrettyMove(axis, pow, startRawIndex, endRawIndex, startMs, endMs));
+    private static List<PrettyMove> compressDisplayMoves(List<PrettyMove> physicalMoves) {
+        return extractDisplayMoves(buildReplaySteps(physicalMoves));
+    }
+
+    private static List<ReplayStep> buildReplaySteps(List<PrettyMove> physicalMoves) {
+        List<ReplayStep> replaySteps = new ArrayList<>();
+        for (int i = 0; i < physicalMoves.size(); i++) {
+            PrettyMove current = physicalMoves.get(i);
+            if (i < physicalMoves.size() - 1) {
+                PrettyMove next = physicalMoves.get(i + 1);
+                PrettyMove sliceMove = current.phaseIndex == next.phaseIndex
+                        ? tryBuildSliceMove(current, next) : null;
+                if (sliceMove != null) {
+                    List<PrettyMove> physicalGroup = new ArrayList<>();
+                    physicalGroup.add(current.copy());
+                    physicalGroup.add(next.copy());
+                    replaySteps.add(new ReplayStep(sliceMove, physicalGroup));
+                    i++;
+                    continue;
+                }
+            }
+            List<PrettyMove> physicalGroup = new ArrayList<>();
+            physicalGroup.add(current.copy());
+            replaySteps.add(new ReplayStep(current.copy(), physicalGroup));
+        }
+        return replaySteps;
+    }
+
+    private static List<PrettyMove> extractDisplayMoves(List<ReplayStep> replaySteps) {
+        List<PrettyMove> result = new ArrayList<>();
+        for (ReplayStep step : replaySteps) {
+            result.add(step.displayMove.copy());
+        }
+        return result;
+    }
+
+    private static PrettyMove tryBuildSliceMove(PrettyMove first, PrettyMove second) {
+        for (int sliceAxis = 0; sliceAxis < SLICE_FACE_PAIRS.length; sliceAxis++) {
+            int primaryFace = SLICE_FACE_PAIRS[sliceAxis][0];
+            int oppositeFace = SLICE_FACE_PAIRS[sliceAxis][1];
+            int slicePow = matchSlicePow(first, second, primaryFace, oppositeFace);
+            if (slicePow >= 0) {
+                return new PrettyMove(sliceAxis + 6, slicePow, first.startRawIndex, second.endRawIndex,
+                        first.startMs, second.endMs, first.phaseIndex);
+            }
+        }
+        return null;
+    }
+
+    private static int matchSlicePow(PrettyMove first, PrettyMove second, int primaryFace, int oppositeFace) {
+        if (isMovePair(first, second, primaryFace, 0, oppositeFace, 2)
+                || isMovePair(first, second, oppositeFace, 2, primaryFace, 0)) {
+            return 0;
+        }
+        if (isMovePair(first, second, primaryFace, 1, oppositeFace, 1)
+                || isMovePair(first, second, oppositeFace, 1, primaryFace, 1)) {
+            return 1;
+        }
+        if (isMovePair(first, second, primaryFace, 2, oppositeFace, 0)
+                || isMovePair(first, second, oppositeFace, 0, primaryFace, 2)) {
+            return 2;
+        }
+        return -1;
+    }
+
+    private static boolean isMovePair(PrettyMove first, PrettyMove second, int face1, int pow1, int face2, int pow2) {
+        return first.axis == face1 && first.pow == pow1
+                && second.axis == face2 && second.pow == pow2;
+    }
+
+    private static void pushMove(List<PrettyMove> moves, int axis, int pow, int startRawIndex, int endRawIndex, int startMs, int endMs, int phaseIndex) {
+        if (moves.isEmpty() || moves.get(moves.size() - 1).axis != axis
+                || moves.get(moves.size() - 1).phaseIndex != phaseIndex) {
+            moves.add(new PrettyMove(axis, pow, startRawIndex, endRawIndex, startMs, endMs, phaseIndex));
             return;
         }
         PrettyMove last = moves.get(moves.size() - 1);
@@ -245,11 +405,13 @@ public class SmartCubeSolveReconstruction {
 
     private static PhaseBuildResult buildPhases(String startFacelet, List<MoveEvent> rawMoves, List<MoveEvent> displayRawMoves) {
         if (rawMoves.isEmpty() || isEmpty(startFacelet)) {
-            return new PhaseBuildResult(reconstructMoves(displayRawMoves), createEmptyPhases());
+            List<PrettyMove> displayMoves = compressDisplayMoves(reconstructPhysicalMoves(displayRawMoves));
+            return new PhaseBuildResult(displayMoves, createEmptyPhases());
         }
         CubieCube cube = new CubieCube();
         if (Util.toCubieCube(startFacelet, cube) != 0) {
-            return new PhaseBuildResult(reconstructMoves(displayRawMoves), createEmptyPhases());
+            List<PrettyMove> displayMoves = compressDisplayMoves(reconstructPhysicalMoves(displayRawMoves));
+            return new PhaseBuildResult(displayMoves, createEmptyPhases());
         }
 
         List<List<MoveEvent>> statusBuckets = new ArrayList<>();
@@ -274,7 +436,7 @@ public class SmartCubeSolveReconstruction {
             phaseRawMoves.add(statusBuckets.get(i));
             phaseNames.add(PHASE_NAMES[PHASE_NAMES.length - 1 - i]);
         }
-        List<List<PrettyMove>> phasePrettyMoves = reconstructMoveGroups(phaseRawMoves);
+        List<List<PrettyMove>> phasePrettyMoves = reconstructDisplayMoveGroups(phaseRawMoves);
         List<Phase> phases = new ArrayList<>();
         List<PrettyMove> reconstructedMoves = new ArrayList<>();
         for (int i = 0; i < phaseNames.size(); i++) {
@@ -283,6 +445,51 @@ public class SmartCubeSolveReconstruction {
             phases.add(createPhase(phaseNames.get(i), moves, 0, moves.size() - 1));
         }
         return new PhaseBuildResult(reconstructedMoves, phases);
+    }
+
+    private static List<Phase> buildPhasesFromReplaySteps(List<ReplayStep> replaySteps) {
+        List<Phase> phases = new ArrayList<>();
+        for (int phaseIndex = 0; phaseIndex < PHASE_NAMES.length; phaseIndex++) {
+            int displayStart = -1;
+            int displayEnd = -1;
+            int physicalStart = -1;
+            int physicalEnd = -1;
+            int physicalMoveCount = 0;
+            StringBuilder moves = new StringBuilder();
+            int startMs = 0;
+            int endMs = 0;
+
+            for (int stepIndex = 0; stepIndex < replaySteps.size(); stepIndex++) {
+                ReplayStep step = replaySteps.get(stepIndex);
+                if (step.displayMove.phaseIndex != phaseIndex) {
+                    continue;
+                }
+                if (displayStart < 0) {
+                    displayStart = stepIndex;
+                    physicalStart = step.displayMove.startRawIndex;
+                    startMs = step.displayMove.startMs;
+                }
+                displayEnd = stepIndex;
+                physicalEnd = step.displayMove.endRawIndex;
+                endMs = step.displayMove.endMs;
+                physicalMoveCount += step.physicalMoves.size();
+                if (moves.length() > 0) {
+                    moves.append(' ');
+                }
+                moves.append(step.displayMove.notation().trim());
+            }
+
+            if (displayStart < 0) {
+                phases.add(new Phase(PHASE_NAMES[phaseIndex], "", 0, 0,
+                        -1, -1, -1, -1, 0, 0));
+            } else {
+                phases.add(new Phase(PHASE_NAMES[phaseIndex], moves.toString(),
+                        displayEnd - displayStart + 1, physicalMoveCount,
+                        displayStart, displayEnd, physicalStart, physicalEnd,
+                        startMs, endMs));
+            }
+        }
+        return phases;
     }
 
     private static int updatePhaseStatus(int status, int progress) {
@@ -298,41 +505,10 @@ public class SmartCubeSolveReconstruction {
         return phases;
     }
 
-    private static List<List<PrettyMove>> reconstructMoveGroups(List<List<MoveEvent>> rawMoveGroups) {
+    private static List<List<PrettyMove>> reconstructDisplayMoveGroups(List<List<MoveEvent>> rawMoveGroups) {
         List<List<PrettyMove>> result = new ArrayList<>();
-        int[] center = {0, 1, 2, 3, 4, 5};
         for (List<MoveEvent> rawMoveGroup : rawMoveGroups) {
-            List<PrettyMove> ret = new ArrayList<>();
-            for (int i = 0; i < rawMoveGroup.size(); i++) {
-                MoveEvent current = rawMoveGroup.get(i);
-                int axis = indexOf(center, current.move / 3);
-                int pow = current.move % 3;
-                if (axis < 0) {
-                    continue;
-                }
-                if (i < rawMoveGroup.size() - 1) {
-                    MoveEvent next = rawMoveGroup.get(i + 1);
-                    int gap = next.elapsedMs - current.elapsedMs;
-                    int axis2 = indexOf(center, next.move / 3);
-                    int pow2 = next.move % 3;
-                    if (gap <= SLICE_COMBO_WINDOW_MS
-                            && axis2 >= 0
-                            && axis != axis2
-                            && axis % 3 == axis2 % 3
-                            && pow + pow2 == 2) {
-                        int axisM = axis % 3;
-                        int powM = (pow - 1) * new int[] {1, 1, -1, -1, -1, 1}[axis] + 1;
-                        pushMove(ret, axisM + 6, powM, i, i + 1, current.elapsedMs, next.elapsedMs);
-                        for (int p = 0; p < powM + 1; p++) {
-                            center = rotateCenter(center, axisM);
-                        }
-                        i++;
-                        continue;
-                    }
-                }
-                pushMove(ret, axis, pow, i, i, current.elapsedMs, current.elapsedMs);
-            }
-            result.add(ret);
+            result.add(compressDisplayMoves(reconstructPhysicalMoves(rawMoveGroup)));
         }
         return result;
     }
@@ -426,23 +602,6 @@ public class SmartCubeSolveReconstruction {
         return result.toArray(new int[result.size()][]);
     }
 
-    private static int indexOf(int[] values, int target) {
-        for (int i = 0; i < values.length; i++) {
-            if (values[i] == target) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private static int[] rotateCenter(int[] center, int axisM) {
-        int[] rotated = new int[6];
-        for (int c = 0; c < 6; c++) {
-            rotated[c] = center[CENTER_ROT[axisM][c]];
-        }
-        return rotated;
-    }
-
     private static String buildMoveSequence(List<PrettyMove> moves) {
         return joinMoves(moves, 0, moves.size() - 1);
     }
@@ -515,8 +674,92 @@ public class SmartCubeSolveReconstruction {
         return count;
     }
 
+    private void appendDisplayStepsJson(StringBuilder sb) {
+        sb.append("\"displaySteps\":[");
+        for (int i = 0; i < replaySteps.size(); i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            ReplayStep step = replaySteps.get(i);
+            PrettyMove displayMove = step.displayMove;
+            sb.append('{');
+            sb.append("\"index\":").append(i);
+            sb.append(',');
+            appendJsonField(sb, "notation", displayMove.notation().trim());
+            sb.append(',');
+            sb.append("\"phaseIndex\":").append(displayMove.phaseIndex);
+            sb.append(',');
+            appendJsonField(sb, "phaseName", phaseName(displayMove.phaseIndex));
+            sb.append(',');
+            sb.append("\"startMs\":").append(displayMove.startMs);
+            sb.append(',');
+            sb.append("\"endMs\":").append(displayMove.endMs);
+            sb.append(',');
+            sb.append("\"deltaMs\":").append(sumRawDeltas(displayMove.startRawIndex, displayMove.endRawIndex));
+            sb.append(',');
+            sb.append("\"physicalStart\":").append(displayMove.startRawIndex);
+            sb.append(',');
+            sb.append("\"physicalEnd\":").append(displayMove.endRawIndex);
+            sb.append(',');
+            appendPhysicalMovesJson(sb, step.physicalMoves);
+            sb.append(',');
+            appendPhysicalDeltasJson(sb, step.physicalMoves);
+            sb.append('}');
+        }
+        sb.append(']');
+    }
+
+    private void appendPhysicalMovesJson(StringBuilder sb, List<PrettyMove> physicalMoves) {
+        sb.append("\"physicalMoves\":[");
+        for (int i = 0; i < physicalMoves.size(); i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            appendJsonString(sb, physicalMoves.get(i).notation().trim());
+        }
+        sb.append(']');
+    }
+
+    private void appendPhysicalDeltasJson(StringBuilder sb, List<PrettyMove> physicalMoves) {
+        sb.append("\"physicalDeltas\":[");
+        for (int i = 0; i < physicalMoves.size(); i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            PrettyMove move = physicalMoves.get(i);
+            sb.append(sumRawDeltas(move.startRawIndex, move.endRawIndex));
+        }
+        sb.append(']');
+    }
+
+    private int sumRawDeltas(int startRawIndex, int endRawIndex) {
+        if (rawMoves == null || rawMoves.isEmpty() || endRawIndex < startRawIndex) {
+            return 0;
+        }
+        int safeStart = Math.max(0, startRawIndex);
+        int safeEnd = Math.min(endRawIndex, rawMoves.size() - 1);
+        int sum = 0;
+        for (int i = safeStart; i <= safeEnd; i++) {
+            sum += Math.max(0, rawMoves.get(i).deltaMs);
+        }
+        return sum;
+    }
+
+    private static String phaseName(int phaseIndex) {
+        if (phaseIndex < 0 || phaseIndex >= PHASE_NAMES.length) {
+            return "";
+        }
+        return PHASE_NAMES[phaseIndex];
+    }
+
     private static void appendJsonField(StringBuilder sb, String key, String value) {
-        sb.append('"').append(escapeJson(key)).append("\":\"").append(escapeJson(value)).append('"');
+        appendJsonString(sb, key);
+        sb.append(':');
+        appendJsonString(sb, value);
+    }
+
+    private static void appendJsonString(StringBuilder sb, String value) {
+        sb.append('"').append(escapeJson(value)).append('"');
     }
 
     private static boolean isEmpty(String value) {

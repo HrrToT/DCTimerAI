@@ -169,6 +169,16 @@
                 android:focusable="true"
                 android:textSize="15sp"
                 android:textColor="@color/colorText" />
+
+            <Button
+                android:id="@+id/btn_replay"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="@string/btn_replay"
+                android:textSize="14sp"
+                android:textAllCaps="false"
+                android:layout_marginTop="6dp"
+                android:visibility="gone" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

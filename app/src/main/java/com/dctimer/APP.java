@@ -89,7 +89,9 @@ public class APP extends Application {
     public static int imageSize;
     public static int[] swipeType = new int[4];
     public static List<String> scrambleList = null;
-    public static final int SORT_LATEST_FIRST = 7;
+    public static final int SORT_LATEST_FIRST = 7;   // legacy preference value
+    public static final int SORT_DATE_DESC = 8;
+    public static final int SORT_DATE_ASC = 9;
     public static int resultOrderType;
     public static int sortType;
     public static String statDetail;
@@ -150,8 +152,20 @@ public class APP extends Application {
         scrambleIdx = idx << 5 | idx2;
 
         sessionIdx = sp.getInt("session", 0);	// 分组
-        resultOrderType = sp.getInt("resultorder", 0);
-        if (resultOrderType != SORT_LATEST_FIRST) resultOrderType = 0;
+        if (sp.contains("resultorder")) {
+            int storedResultOrder = sp.getInt("resultorder", SORT_DATE_DESC);
+            if (storedResultOrder == SORT_DATE_DESC || storedResultOrder == SORT_DATE_ASC) {
+                resultOrderType = storedResultOrder;
+            } else if (storedResultOrder == SORT_LATEST_FIRST) {
+                resultOrderType = SORT_DATE_DESC;
+            } else if (storedResultOrder == 0) {
+                resultOrderType = SORT_DATE_ASC;
+            } else {
+                resultOrderType = SORT_DATE_DESC;
+            }
+        } else {
+            resultOrderType = SORT_DATE_DESC;
+        }
         sortType = resultOrderType;
         for (int i = 0; i < 15; i++) {
             sesionType[i] = sp.getInt("sestype" + i, 32);
@@ -262,7 +276,7 @@ public class APP extends Application {
         picPath = ""; picUri = "";
         fullScreen = false; screenOn = false; vibrateType = 0;
         vibrateTime = 2; screenOri = 0;
-        resultOrderType = 0; sortType = 0;
+        resultOrderType = SORT_DATE_DESC; sortType = SORT_DATE_DESC;
         smartCubeLogoMode = SmartCubeLogoProvider.MODE_NONE;
         smartCubeLogoBuiltinId = SmartCubeLogoProvider.BUILTIN_DCTIMER_AI;
         smartCubeLogoUri = "";

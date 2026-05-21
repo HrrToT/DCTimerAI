@@ -29,7 +29,13 @@ public class ImportExportDialog extends DialogFragment {
         buidler.setView(view).setPositiveButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface di, int i) {
                 int rgid = radioGroup.getCheckedRadioButtonId();
-                if (rgid == R.id.rbt_in) {  //导入数据库
+                if (rgid == R.id.rbt_backup) {  //一键导出
+                    if (getActivity() instanceof MainActivity)
+                        ((MainActivity) getActivity()).requestBackupExport();
+                } else if (rgid == R.id.rbt_restore) {  //一键导入
+                    if (getActivity() instanceof MainActivity)
+                        ((MainActivity) getActivity()).requestBackupImport();
+                } else if (rgid == R.id.rbt_in) {  //导入数据库
                     if (getActivity() instanceof MainActivity)
                         ((MainActivity) getActivity()).requestDatabaseImport();
                 } else if (rgid == R.id.rbt_out) {  //导出数据库

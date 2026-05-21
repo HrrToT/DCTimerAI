@@ -43,6 +43,15 @@ public class SmartCube3DView extends GLSurfaceView {
     private int touchSlop;
     private long lastTapTime;
     private OnDoubleTapListener onDoubleTapListener;
+    private OnAnimationEndListener animationEndListener;
+
+    public interface OnAnimationEndListener {
+        void onAnimationEnd();
+    }
+
+    public void setOnAnimationEndListener(OnAnimationEndListener listener) {
+        animationEndListener = listener;
+    }
     private final Runnable singleTapRunnable = new Runnable() {
         @Override
         public void run() {
@@ -126,6 +135,11 @@ public class SmartCube3DView extends GLSurfaceView {
         onDoubleTapListener = listener;
     }
 
+    public void setReplayInteractionEnabled(final boolean enabled) {
+        // Kept as a replay-dialog compatibility hook. The view interaction has
+        // been reverted to the original yaw/pitch mechanism for all modes.
+    }
+
     public void animateMove(String fromState, String toState, final int move, long durationMs) {
         final String validFromState = sanitizeFacelets(fromState);
         final String validToState = sanitizeFacelets(toState);
@@ -162,6 +176,9 @@ public class SmartCube3DView extends GLSurfaceView {
                         }
                     });
                     requestRender();
+                    if (animationEndListener != null) {
+                        animationEndListener.onAnimationEnd();
+                    }
                 }
             }
         });
@@ -240,7 +257,7 @@ public class SmartCube3DView extends GLSurfaceView {
     }
 
     private boolean canAnimateMove(int move) {
-        return move >= 0 && move < 18;
+        return move >= 0 && move < 27;
     }
 
     private void handleTap() {
@@ -286,7 +303,7 @@ public class SmartCube3DView extends GLSurfaceView {
         private static final int ROUNDED_CORNER_SEGMENTS = 5;
         private static final int ROUNDED_RECT_POINT_COUNT = (ROUNDED_CORNER_SEGMENTS + 1) * 4;
         private static final int ROUNDED_RECT_FLOAT_COUNT = ROUNDED_RECT_POINT_COUNT * 9;
-        private static final float MAX_VIEW_PITCH = 115f;
+        private static final float MAX_VIEW_PITCH = 180f;
         private static final String VERTEX_SHADER =
                 "uniform mat4 uMvpMatrix;" +
                 "attribute vec3 aPosition;" +
@@ -984,10 +1001,42 @@ public class SmartCube3DView extends GLSurfaceView {
         }
     }
 
+    private static class Vec3 {
+        final float x;
+        final float y;
+        final float z;
+
+        Vec3(float x, float y, float z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        Vec3 add(Vec3 other) {
+            return new Vec3(x + other.x, y + other.y, z + other.z);
+        }
+
+        Vec3 scale(float scale) {
+            return new Vec3(x * scale, y * scale, z * scale);
+        }
+
+        Vec3 normalize() {
+            float length = (float) Math.sqrt(x * x + y * y + z * z);
+            if (length <= 0f) {
+                return this;
+            }
+            return new Vec3(x / length, y / length, z / length);
+        }
+
+        float dot(Vec3 other) {
+            return x * other.x + y * other.y + z * other.z;
+        }
+    }
+
     private static class MoveSpec {
-        private static final int[] FACE_AXIS = {1, 0, 2, 1, 0, 2};
-        private static final int[] FACE_LAYER = {1, 1, 1, -1, -1, -1};
-        private static final int[] FACE_SIGN = {-1, -1, -1, 1, 1, 1};
+        private static final int[] FACE_AXIS = {1, 0, 2, 1, 0, 2, 1, 0, 2};
+        private static final int[] FACE_LAYER = {1, 1, 1, -1, -1, -1, 0, 0, 0};
+        private static final int[] FACE_SIGN = {-1, -1, -1, 1, 1, 1, 1, 1, -1};
 
         final int axis;
         final int layer;
@@ -1022,39 +1071,14 @@ public class SmartCube3DView extends GLSurfaceView {
                     coordinate = cubie.z;
                     break;
             }
+            if (layer == 0) {
+                return coordinate == 0 && isEdgeCubie(cubie);
+            }
             return layer > 0 ? coordinate > 0 : coordinate < 0;
         }
-    }
 
-    private static class Vec3 {
-        final float x;
-        final float y;
-        final float z;
-
-        Vec3(float x, float y, float z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-
-        Vec3 add(Vec3 other) {
-            return new Vec3(x + other.x, y + other.y, z + other.z);
-        }
-
-        Vec3 scale(float scale) {
-            return new Vec3(x * scale, y * scale, z * scale);
-        }
-
-        Vec3 normalize() {
-            float length = (float) Math.sqrt(x * x + y * y + z * z);
-            if (length <= 0f) {
-                return this;
-            }
-            return new Vec3(x / length, y / length, z / length);
-        }
-
-        float dot(Vec3 other) {
-            return x * other.x + y * other.y + z * other.z;
+        private boolean isEdgeCubie(Cubie cubie) {
+            return Math.abs(cubie.x) + Math.abs(cubie.y) + Math.abs(cubie.z) == 2;
         }
     }
 }

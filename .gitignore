@@ -26,6 +26,9 @@ key.properties
 /.cxx/
 /captures/
 
+# Icon generator tools
+/tools/
+
 # OS / misc
 .DS_Store
 Thumbs.db
@@ -41,3 +44,5 @@ other/
 .playwright-mcp/
 promo-video/
 !website/assets/*.apk
+
+/train/

@@ -60,11 +60,7 @@ import com.dingmouren.colorpicker.ColorPickerDialog;
 import com.dingmouren.colorpicker.OnColorPickerListener;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.*;
-
-import org.json.JSONObject;
 
 import cs.min2phase.Tools;
 import cs.threephase.Util;
@@ -73,7 +69,6 @@ import uz.shift.colorpicker.LineColorPicker;
 import uz.shift.colorpicker.OnColorChangedListener;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
-    private static final String UPDATE_INFO_URL = "https://raw.githubusercontent.com/HrrToT/DCTimerAI/master/website/update.json";
     private APP app;
     public Context context;
     private DrawerLayout drawer;
@@ -198,6 +193,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private static final int REQUEST_EXPORT_SCRAMBLE = 12;
     private static final int REQUEST_SMART_CUBE_LOGO_IMAGE = 13;
     private static final int REQUEST_SMART_CUBE_LOGO_CROP = 14;
+    private static final int REQUEST_BACKUP_EXPORT = 15;
+    private static final int REQUEST_BACKUP_IMPORT = 16;
+    private static final int REQUEST_IMPORT_CSTIMER = 17;
+    private static final int REQUEST_IMPORT_TWISTY_TIMER = 18;
     private static final int REQUEST_BLE_PERMISSION = 6;
     private static final int ANDROID_API_S = 31;
     private static final int SMART_CUBE_CORRECTION_LIMIT = 10;
@@ -226,6 +225,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         SmartCubeSequenceProgress(int progress, String pendingMove) {
             this.progress = progress;
             this.pendingMove = pendingMove;
+        }
+    }
+
+    private static class ImportSessionOption {
+        final int sessionId;
+        final String label;
+
+        ImportSessionOption(int sessionId, String label) {
+            this.sessionId = sessionId;
+            this.label = label;
+        }
+
+        @Override
+        public String toString() {
+            return label;
         }
     }
 
@@ -775,6 +789,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             case R.id.nav_import_export:   //导入导出数据库
                 ImportExportDialog.newInstance().show(getSupportFragmentManager(), "ImportExport");
                 break;
+            case R.id.nav_import_other_timer:
+                OtherTimerImportDialog.newInstance().show(getSupportFragmentManager(), "OtherTimerImport");
+                break;
             case R.id.nav_stackmat:
                 if (Build.VERSION.SDK_INT > 22) {
                     if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
@@ -815,81 +832,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 intent.putExtra("title", getString(R.string.menu_cubing));
                 startActivity(intent);
                 break;
-            case R.id.nav_test:
-                //随机生成成绩
-                result.insert(10000, 12000, 4000000, currentScramble.getScramble());
-                btnSessionMean.setText(getString(R.string.session_mean, result.getSessionMean()));
-                result.calcAvg();
-                if (multiPhase > 0) result.calcMpMean();
-                if (sortType != 0) result.sortResult();
-                resAdapter.reload();
-                lvResult.setSelection(sortType == SORT_LATEST_FIRST ? 0 : resAdapter.getCount() - 1);
-                newScramble();
-                setStatsLabel();
-                break;
             case R.id.nav_about:
                 new AlertDialog.Builder(context).setIcon(R.mipmap.ic_launcher).setTitle(R.string.app_name)
                         .setMessage(String.format(getString(R.string.about_msg), Utils.getVersionName(context)))
-                        .setPositiveButton(R.string.btn_upgrade, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                checkAppUpdate();
-                            }
-                        })
-                        .setNegativeButton(R.string.btn_close, null).show();
+                        .setPositiveButton(R.string.btn_close, null).show();
                 break;
         }
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    private void checkAppUpdate() {
-        final ProgressDialog progressDialog = new ProgressDialog(context);
-        progressDialog.setMessage(getString(R.string.check_update_progress));
-        progressDialog.setCancelable(false);
-        progressDialog.show();
-        new CheckUpdateTask(progressDialog).execute();
-    }
-
-    private void showUpdateResult(UpdateInfo updateInfo) {
-        if (updateInfo == null || updateInfo.error) {
-            Toast.makeText(context, R.string.check_update_failed, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        int currentVersionCode = Utils.getVersion(context);
-        if (updateInfo.versionCode <= currentVersionCode) {
-            Toast.makeText(context, R.string.check_update_latest, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        StringBuilder message = new StringBuilder();
-        message.append(String.format(getString(R.string.update_available_msg), updateInfo.versionName));
-        if (!TextUtils.isEmpty(updateInfo.notes)) {
-            message.append("\n\n").append(updateInfo.notes);
-        }
-        new AlertDialog.Builder(context)
-                .setTitle(R.string.new_version)
-                .setMessage(message.toString())
-                .setPositiveButton(R.string.btn_download, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        openUrl(TextUtils.isEmpty(updateInfo.apkUrl) ? updateInfo.releaseUrl : updateInfo.apkUrl);
-                    }
-                })
-                .setNegativeButton(R.string.btn_close, null)
-                .show();
-    }
-
-    private void openUrl(String url) {
-        if (TextUtils.isEmpty(url)) {
-            Toast.makeText(context, R.string.check_update_failed, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        try {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            startActivity(intent);
-        } catch (Exception e) {
-            Toast.makeText(context, R.string.check_update_failed, Toast.LENGTH_SHORT).show();
-        }
     }
 
     @Override
@@ -899,74 +849,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return true;
         }
         return super.dispatchKeyEvent(event);
-    }
-
-    private static class UpdateInfo {
-        int versionCode;
-        String versionName;
-        String releaseUrl;
-        String apkUrl;
-        String notes;
-        boolean error;
-    }
-
-    private class CheckUpdateTask extends AsyncTask<Void, Void, UpdateInfo> {
-        private final ProgressDialog progressDialog;
-
-        CheckUpdateTask(ProgressDialog progressDialog) {
-            this.progressDialog = progressDialog;
-        }
-
-        @Override
-        protected UpdateInfo doInBackground(Void... voids) {
-            HttpURLConnection connection = null;
-            BufferedReader reader = null;
-            try {
-                URL url = new URL(UPDATE_INFO_URL);
-                connection = (HttpURLConnection) url.openConnection();
-                connection.setConnectTimeout(10000);
-                connection.setReadTimeout(15000);
-                connection.setUseCaches(false);
-                connection.connect();
-                if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                    UpdateInfo info = new UpdateInfo();
-                    info.error = true;
-                    return info;
-                }
-                reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
-                StringBuilder builder = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    builder.append(line);
-                }
-                JSONObject json = new JSONObject(builder.toString());
-                UpdateInfo info = new UpdateInfo();
-                info.versionCode = json.optInt("versionCode", 0);
-                info.versionName = json.optString("versionName", "");
-                info.releaseUrl = json.optString("releaseUrl", "");
-                info.apkUrl = json.optString("apkUrl", "");
-                info.notes = json.optString("notes", "");
-                return info;
-            } catch (Exception e) {
-                UpdateInfo info = new UpdateInfo();
-                info.error = true;
-                return info;
-            } finally {
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (IOException ignored) {
-                    }
-                }
-                if (connection != null) connection.disconnect();
-            }
-        }
-
-        @Override
-        protected void onPostExecute(UpdateInfo updateInfo) {
-            if (progressDialog.isShowing()) progressDialog.dismiss();
-            showUpdateResult(updateInfo);
-        }
     }
 
     @Override
@@ -1047,6 +929,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             Uri uri = data.getData();
             if (uri != null) {
                 Utils.exportDB(this, uri, handler);
+            }
+        } else if (requestCode == REQUEST_BACKUP_EXPORT && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                BackupManager.exportBackup(this, uri, handler);
+            }
+        } else if (requestCode == REQUEST_BACKUP_IMPORT && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                app.closeDb();
+                BackupManager.importBackup(this, uri, handler);
+            }
+        } else if ((requestCode == REQUEST_IMPORT_CSTIMER || requestCode == REQUEST_IMPORT_TWISTY_TIMER)
+                && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                int sourceType = requestCode == REQUEST_IMPORT_CSTIMER
+                        ? ExternalTimerImportManager.SOURCE_CSTIMER
+                        : ExternalTimerImportManager.SOURCE_TWISTY_TIMER;
+                handleOtherTimerImport(uri, sourceType);
             }
         } else if (requestCode == REQUEST_IMPORT_SCRAMBLE && resultCode == RESULT_OK && data != null) {
             Uri uri = data.getData();
@@ -4112,6 +4014,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     btnLeft.setEnabled(true);
                     btnRight.setEnabled(true);
                     break;
+                case BackupManager.MSG_EXPORT_SUCCESS:
+                    Toast.makeText(context, getString(R.string.backup_export_success), Toast.LENGTH_SHORT).show();
+                    break;
+                case BackupManager.MSG_EXPORT_FAIL:
+                    Toast.makeText(context, getString(R.string.backup_export_fail), Toast.LENGTH_SHORT).show();
+                    break;
+                case BackupManager.MSG_IMPORT_SUCCESS:
+                    Toast.makeText(context, getString(R.string.backup_import_success), Toast.LENGTH_SHORT).show();
+                    Intent intent2 = getIntent();
+                    finish();
+                    startActivity(intent2);
+                    break;
+                case BackupManager.MSG_IMPORT_FAIL:
+                    Toast.makeText(context, getString(R.string.backup_import_fail), Toast.LENGTH_SHORT).show();
+                    Intent intent3 = getIntent();
+                    finish();
+                    startActivity(intent3);
+                    break;
                 default:
                     progressDialog.setProgress(msw - 100);
                     break;
@@ -5156,11 +5076,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (multiPhase > 0) result.calcMpMean();
         if (sortType != 0) result.sortResult();
         resAdapter.reload();
-        if (sortType == 0)
-            //rvResult.scrollToPosition(resAdapter.getCount() - 1);
-            lvResult.setSelection(resAdapter.getCount() - 1);
-        else if (sortType == SORT_LATEST_FIRST)
-            lvResult.setSelection(0);
+        if (sortType == 0 || isGlobalResultOrder(sortType))
+            scrollResultToLatest();
         if (result.isSessionBest()) {
             Snackbar.make(frame, getString(R.string.new_session_best) + result.getBestTime(), Snackbar.LENGTH_SHORT).show();
         } else if (result.isAvgBest(0)) {
@@ -5185,13 +5102,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         String date = result.getString(5);
         String comment = result.getString(6);
         String solution = result.getString(13);
+        String solveMeta = result.getString(14);
         int id = result.getId(p);
         Log.w("dct", "id: "+id);
         if (date == null) date = "";
         if (multiPhase > 0) {   //TODO 显示各分段成绩
 
         }
-        ResultDialog dialog = ResultDialog.newInstance(p, time, scramble, date, penalty, comment, solution, sessionManager.getPuzzle(sessionIdx));
+        ResultDialog dialog = ResultDialog.newInstance(p, time, scramble, date, penalty, comment, solution, sessionManager.getPuzzle(sessionIdx), solveMeta);
         dialog.show(getSupportFragmentManager(), "result");
     }
 
@@ -5368,19 +5286,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private int getSortOptionIndex() {
-        if (sortType == SORT_LATEST_FIRST) return 1;
+        if (sortType == SORT_DATE_DESC || sortType == SORT_LATEST_FIRST) return 0;
+        if (sortType == SORT_DATE_ASC || sortType == 0) return 1;
         if (sortType > 0) return sortType + 1;
         return 0;
     }
 
     private int getSortTypeFromOption(int option) {
-        if (option == 1) return SORT_LATEST_FIRST;
+        if (option == 0) return SORT_DATE_DESC;
+        if (option == 1) return SORT_DATE_ASC;
         if (option > 1) return option - 1;
         return 0;
     }
 
     private boolean isGlobalResultOrder(int type) {
-        return type == 0 || type == SORT_LATEST_FIRST;
+        return type == SORT_DATE_DESC || type == SORT_DATE_ASC || type == SORT_LATEST_FIRST;
     }
 
     private void resetSortToGlobalOrder() {
@@ -5390,7 +5310,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void scrollResultToLatest() {
         if (resAdapter.getCount() == 0) return;
-        lvResult.setSelection(sortType == SORT_LATEST_FIRST ? 0 : resAdapter.getCount() - 1);
+        lvResult.setSelection(isLatestAtTopResultOrder(sortType) ? 0 : resAdapter.getCount() - 1);
+    }
+
+    private boolean isLatestAtTopResultOrder(int type) {
+        return type == SORT_DATE_DESC || type == SORT_LATEST_FIRST;
     }
 
     private void togglePbSort(int column) {
@@ -5412,6 +5336,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void releaseWakeLock() {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    public void requestBackupExport() {
+        openCreateDocument("application/zip", "DCTimerAI_backup.dct", REQUEST_BACKUP_EXPORT);
+    }
+
+    public void requestBackupImport() {
+        openDocumentPicker("*/*", new String[] {"application/zip", "application/octet-stream", "*/*"}, REQUEST_BACKUP_IMPORT);
+    }
+
+    public void requestOtherTimerImport(int sourceType) {
+        if (sourceType == ExternalTimerImportManager.SOURCE_CSTIMER) {
+            openDocumentPicker("*/*", new String[] {"application/json", "text/plain", "*/*"}, REQUEST_IMPORT_CSTIMER);
+        } else if (sourceType == ExternalTimerImportManager.SOURCE_TWISTY_TIMER) {
+            openDocumentPicker("*/*", new String[] {"text/plain", "text/csv", "application/csv", "*/*"}, REQUEST_IMPORT_TWISTY_TIMER);
+        }
     }
 
     public void requestDatabaseImport() {
@@ -5436,6 +5376,242 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         importScrambleLen = 0;
         Utils.addScramble(scramble, scrambleList);
         if (scrambleList.size() > 0) newScramble();
+    }
+
+    private void handleOtherTimerImport(final Uri uri, final int sourceType) {
+        final ProgressDialog dialog = ProgressDialog.show(this, null, getString(R.string.other_timer_import_parsing), true, false);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ExternalTimerImportManager.ImportBatch batch = null;
+                Exception error = null;
+                try {
+                    String text = Utils.readText(MainActivity.this, uri);
+                    batch = ExternalTimerImportManager.parseText(sourceType, text);
+                } catch (Exception e) {
+                    error = e;
+                }
+                final ExternalTimerImportManager.ImportBatch parsedBatch = batch;
+                final Exception parseError = error;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (dialog.isShowing()) dialog.dismiss();
+                        if (parseError != null) {
+                            Toast.makeText(context, getString(R.string.other_timer_import_parse_fail), Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        if (parsedBatch == null || parsedBatch.solves.isEmpty()) {
+                            Toast.makeText(context, getString(R.string.other_timer_import_no_valid), Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        showOtherTimerImportPreview(parsedBatch);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void showOtherTimerImportPreview(final ExternalTimerImportManager.ImportBatch batch) {
+        final List<ImportSessionOption> sessionOptions = build333SessionOptions();
+        View view = getLayoutInflater().inflate(R.layout.dialog_other_timer_import_target, null);
+        final TextView summaryView = view.findViewById(R.id.tv_import_summary);
+        final RadioGroup targetGroup = view.findViewById(R.id.rg_import_target);
+        final RadioButton rbNew = view.findViewById(R.id.rb_import_new_session);
+        final RadioButton rbAppend = view.findViewById(R.id.rb_import_append_session);
+        final RadioButton rbReplace = view.findViewById(R.id.rb_import_replace_session);
+        final TextView newSessionLabel = view.findViewById(R.id.tv_new_session_label);
+        final EditText newSessionName = view.findViewById(R.id.et_new_session_name);
+        final TextView targetSessionLabel = view.findViewById(R.id.tv_target_session_label);
+        final Spinner targetSessionSpinner = view.findViewById(R.id.sp_target_session);
+
+        summaryView.setText(buildOtherTimerImportSummary(batch));
+        final String defaultSessionName = buildDefaultImportedSessionName(batch.sourceType);
+        newSessionName.setText(defaultSessionName);
+
+        if (sessionOptions.isEmpty()) {
+            rbAppend.setEnabled(false);
+            rbReplace.setEnabled(false);
+        } else {
+            ArrayAdapter<ImportSessionOption> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, sessionOptions);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            targetSessionSpinner.setAdapter(adapter);
+        }
+
+        targetGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                updateOtherTimerImportTargetViews(checkedId, newSessionLabel, newSessionName, targetSessionLabel, targetSessionSpinner);
+            }
+        });
+        updateOtherTimerImportTargetViews(targetGroup.getCheckedRadioButtonId(), newSessionLabel, newSessionName, targetSessionLabel, targetSessionSpinner);
+
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.other_timer_import_preview_title)
+                .setView(view)
+                .setPositiveButton(R.string.btn_ok, null)
+                .setNegativeButton(R.string.btn_cancel, null)
+                .create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface di) {
+                Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                positive.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        ExternalTimerImportManager.ImportTargetOptions options = new ExternalTimerImportManager.ImportTargetOptions();
+                        int checkedId = targetGroup.getCheckedRadioButtonId();
+                        if (checkedId == R.id.rb_import_new_session) {
+                            options.mode = ExternalTimerImportManager.MODE_NEW_SESSION;
+                            String name = newSessionName.getText() == null ? "" : newSessionName.getText().toString().trim();
+                            options.newSessionName = TextUtils.isEmpty(name) ? defaultSessionName : name;
+                            dialog.dismiss();
+                            executeOtherTimerImport(batch, options);
+                            return;
+                        }
+                        if (sessionOptions.isEmpty() || targetSessionSpinner.getSelectedItemPosition() < 0
+                                || targetSessionSpinner.getSelectedItemPosition() >= sessionOptions.size()) {
+                            Toast.makeText(context, getString(R.string.other_timer_import_select_session_required), Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        ImportSessionOption selected = sessionOptions.get(targetSessionSpinner.getSelectedItemPosition());
+                        options.targetSessionId = selected.sessionId;
+                        if (checkedId == R.id.rb_import_replace_session) {
+                            options.mode = ExternalTimerImportManager.MODE_REPLACE_SESSION;
+                            confirmOtherTimerImportReplace(dialog, batch, options);
+                        } else {
+                            options.mode = ExternalTimerImportManager.MODE_APPEND_TO_SESSION;
+                            dialog.dismiss();
+                            executeOtherTimerImport(batch, options);
+                        }
+                    }
+                });
+            }
+        });
+        dialog.show();
+    }
+
+    private void confirmOtherTimerImportReplace(final AlertDialog parentDialog,
+                                                final ExternalTimerImportManager.ImportBatch batch,
+                                                final ExternalTimerImportManager.ImportTargetOptions options) {
+        new AlertDialog.Builder(this)
+                .setMessage(R.string.other_timer_import_confirm_replace)
+                .setPositiveButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        parentDialog.dismiss();
+                        executeOtherTimerImport(batch, options);
+                    }
+                })
+                .setNegativeButton(R.string.btn_cancel, null)
+                .show();
+    }
+
+    private void executeOtherTimerImport(final ExternalTimerImportManager.ImportBatch batch,
+                                         final ExternalTimerImportManager.ImportTargetOptions options) {
+        final ProgressDialog dialog = ProgressDialog.show(this, null, getString(R.string.other_timer_importing), true, false);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ExternalTimerImportManager.ImportExecutionResult importResult = null;
+                Exception importError = null;
+                try {
+                    app.closeDb();
+                    importResult = ExternalTimerImportManager.importBatch(MainActivity.this, batch, options);
+                } catch (Exception e) {
+                    importError = e;
+                }
+                final ExternalTimerImportManager.ImportExecutionResult finalImportResult = importResult;
+                final Exception finalImportError = importError;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (dialog.isShowing()) dialog.dismiss();
+                        app.initSession(context);
+                        result = app.getResult();
+                        sessionManager = app.getSessionManager();
+                        if (resAdapter != null) {
+                            resAdapter.setResult(result);
+                        }
+                        if (sessionManager.getSessionLength() > 0) {
+                            if (finalImportResult != null && finalImportResult.targetSessionId >= 0) {
+                                int importedSessionIndex = findSessionIndexById(finalImportResult.targetSessionId);
+                                if (importedSessionIndex >= 0) {
+                                    sessionIdx = importedSessionIndex;
+                                }
+                            }
+                            if (sessionIdx >= sessionManager.getSessionLength()) sessionIdx = 0;
+                            changeSession();
+                        }
+                        if (finalImportError != null || finalImportResult == null) {
+                            Toast.makeText(context, getString(R.string.other_timer_import_execute_fail), Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(context, getString(R.string.other_timer_import_success, finalImportResult.importedCount), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void updateOtherTimerImportTargetViews(int checkedId,
+                                                   TextView newSessionLabel,
+                                                   EditText newSessionName,
+                                                   TextView targetSessionLabel,
+                                                   Spinner targetSessionSpinner) {
+        boolean isNew = checkedId == R.id.rb_import_new_session;
+        newSessionLabel.setVisibility(isNew ? View.VISIBLE : View.GONE);
+        newSessionName.setVisibility(isNew ? View.VISIBLE : View.GONE);
+        targetSessionLabel.setVisibility(isNew ? View.GONE : View.VISIBLE);
+        targetSessionSpinner.setVisibility(isNew ? View.GONE : View.VISIBLE);
+    }
+
+    private List<ImportSessionOption> build333SessionOptions() {
+        ArrayList<ImportSessionOption> options = new ArrayList<>();
+        sessionManager.updateSessionCount();
+        for (int i = 0; i < sessionManager.getSessionLength(); i++) {
+            int puzzle = sessionManager.getPuzzle(i);
+            if (!ExternalTimerImportManager.is333Puzzle(puzzle)) continue;
+            Session session = sessionManager.getSession(i);
+            options.add(new ImportSessionOption(session.getId(), sessionManager.getSessionName(i)));
+        }
+        return options;
+    }
+
+    private String buildOtherTimerImportSummary(ExternalTimerImportManager.ImportBatch batch) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(getString(R.string.other_timer_import_summary_source, getOtherTimerSourceLabel(batch.sourceType)));
+        builder.append('\n').append(getString(R.string.other_timer_import_summary_valid, batch.solves.size()));
+        builder.append('\n').append(getString(R.string.other_timer_import_summary_skipped_time, batch.skippedTimeCount));
+        builder.append('\n').append(getString(R.string.other_timer_import_summary_empty_penalty, batch.emptyPenaltyCount));
+        builder.append('\n').append(getString(R.string.other_timer_import_summary_empty_scramble, batch.emptyScrambleCount));
+        builder.append('\n').append(getString(R.string.other_timer_import_summary_empty_date, batch.emptyDateCount));
+        builder.append('\n').append(getString(R.string.other_timer_import_summary_non_333, batch.droppedNon333Count));
+        builder.append('\n').append(getString(R.string.other_timer_import_summary_malformed, batch.malformedCount));
+        return builder.toString();
+    }
+
+    private String buildDefaultImportedSessionName(int sourceType) {
+        String sourceLabel = getOtherTimerSourceLabel(sourceType);
+        String date = new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        return getString(R.string.other_timer_import_default_session_name, sourceLabel, date);
+    }
+
+    private String getOtherTimerSourceLabel(int sourceType) {
+        if (sourceType == ExternalTimerImportManager.SOURCE_CSTIMER) {
+            return getString(R.string.other_timer_cstimer);
+        }
+        if (sourceType == ExternalTimerImportManager.SOURCE_TWISTY_TIMER) {
+            return getString(R.string.other_timer_twisty_timer);
+        }
+        return getString(R.string.other_timer_import_title);
+    }
+
+    private int findSessionIndexById(int sessionId) {
+        for (int i = 0; i < sessionManager.getSessionLength(); i++) {
+            if (sessionManager.getSession(i).getId() == sessionId) return i;
+        }
+        return -1;
     }
 
     private void openDocumentPicker(String primaryType, String[] mimeTypes, int requestCode) {

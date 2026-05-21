@@ -489,8 +489,8 @@
     </array>
 
     <array name="opt_sort_order">
-        <item>Default (newest last)</item>
-        <item>Newest first</item>
+        <item>Date (new to old)</item>
+        <item>Date (old to new)</item>
         <item>Result</item>
         <item>Result (desc)</item>
         <item>Average 1</item>
@@ -500,8 +500,8 @@
     </array>
 
     <array name="opt_sort_order2">
-        <item>Default (newest last)</item>
-        <item>Newest first</item>
+        <item>Date (new to old)</item>
+        <item>Date (old to new)</item>
         <item>Result</item>
         <item>Result (desc)</item>
     </array>

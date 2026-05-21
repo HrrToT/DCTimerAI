@@ -27,32 +27,45 @@
 
 ## Acknowledgements
 
-Thanks to [huizhiLLL](https://github.com/huizhiLLL), the author of [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE), for the pioneering work on smart cube Bluetooth connection and MAC-free quick connection, which laid the foundation for this project.
+Thanks to [huizhiLLL](https://github.com/huizhiLLL), the author of [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE), for the pioneering work on 3x3 smart cube Bluetooth connection and MAC-free quick connection, which laid the foundation for this project.
 
 ---
 
 ## About
 
-`DCTimerAI` is a modified version of [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE). The upstream project already provides speedcubing timing, smart cube connection, Bluetooth timer support, scramble generation, solve history, statistics, and real-time smart cube 3D previews.
+`DCTimerAI` is a modified version of [DCTimer-BLE](https://github.com/huizhiLLL/DCTimer-BLE). The upstream project already supports smart cube connectivity.
 
-This fork mainly adds `MoYu AI / MoYu32` gyroscope and orientation support, so the 3D cube can follow the physical cube rotation. It also unifies the renderer used by the main page and the cube-state dialog, and adds a white center-cap logo system.
+This fork adds `MoYu AI / MoYu32` gyroscope and orientation data support, solve replay, and import from other timers.
 
 ## Download
 
 - [GitHub Releases](https://github.com/HrrToT/DCTimerAI/releases/latest)
 
 > DCTimerAI uses a different package name from the original DCTimer, so it will not conflict during installation.  
-> The data format remains compatible with the upstream project. You can export data from the original DCTimer / DCTimer-BLE and import it into this version.
+> Since v2.2.7, it also uses a different package name from DCTimer-BLE, so it will not conflict during installation.
 
-## Changes In This Fork
+## Updates In This Fork
 
-- **Smart cube**: reads `171` orientation packets from `MoYu AI / MoYu32`, maps them into the app's coordinate system, supports white-top / green-front calibration, keeps smart mode active even if the connection dialog is canceled, and places smart-related settings at the top of the settings page.
-- **Interaction and logo**: lets smart mode enter the connection flow directly from the main page, and adds a white center-cap logo system with built-in presets, custom uploads, circular crop editing, a three-column scrolling picker, and up to `6` remembered custom slots.
-- **3D appearance**: rebuilds the preview into a `cubie`-based renderer, unifies the main page and dialog rendering, narrows the layer gaps, and updates the overall look to better match a modern stickerless cube.
+### v2.2.7
+- **Result sorting**: Changes the old "default (newest last) / newest first" to sort by completion date, corresponding to "Date (new to old) / Date (old to new)". Empty dates are treated as the earliest entries.
+- **Import / Export**
+  - Adds a dedicated "Import / Export" section in the drawer for backups, database migration, and external timer imports.
+  - **One-step data export**: Supports one-tap export of the database, current settings, background images, and smart cube logo assets.
+  - **Import from other timers**: Supports **CSTimer** and **Twisty Timer**, parsing 3x3 solves only. Options include "New session / Append to existing session / Replace existing session", preserving solve time, penalty, scramble, and original date.
+  - **Legacy database import / export**: Continues to support compatibility with the original DCTimer for migrating historical solves.
+- **Solve reconstruction and replay**
+  - The "Solve" detail page and replay now share the same `solve_meta / displaySteps` data source, keeping CFOP phase splits consistent.
+  - **EMS display**: Supports compressing adjacent outer-layer move pairs within the same CFOP phase into `E / M / S` notation for display, counted as a single step in replay statistics.
+  - **Replay UI**: Reorganized replay layout, reuses the main screen background, compresses sparkline and button area to give the 3D cube more display space.
+### v2.2.4-v2.2.6
+- **Smart cube**: Supports `171` orientation packet reading and coordinate mapping for `MoYu AI / MoYu32`, with white-top / green-front one-tap calibration. Double-tap on the main screen quickly resets the view, smart mode is retained after canceling the connection dialog, and smart-related settings are placed at the top of the settings page.
+  - **Interaction**: Smart mode is set as the default timing method, and the connection flow can be entered directly from the main screen.
+  - **Logo**: Adds a white center-cap logo system with built-in presets, custom uploads, and remembered slots.
+- **3D appearance**: Rebuilds the sticker-style preview into a `cubie`-level solid-color renderer, unifies the main screen and state dialog display, narrows inter-layer gaps, and updates corner radii and colors to better match a modern stickerless cube.
 
-## Upstream Features
+## Upstream BLE Version Features
 
-- Standard speedcubing timer, WCA inspection timing, solve history, and statistics.
+- Standard speedcubing timer, inspection timing, solve history and statistics.
 - Scramble generation, scramble import / export, and database import / export.
 - Smart cube auto start / stop, scramble progress hints, and deviation correction.
 - Real-time 3D smart cube state preview.
@@ -72,14 +85,6 @@ This fork currently adds orientation tracking for:
 
 - `MoYu AI / MoYu32`
 
-## Usage
-
-1. Open the project in Android Studio and run it on a physical Android device.
-2. Select smart cube timing mode in the app.
-3. Scan for and connect a `MoYu AI / MoYu32` smart cube.
-4. Open the cube-state dialog, place the cube in a white-top / green-front pose, and tap `Reset orientation`.
-5. If needed, open `White center logo` from smart settings to switch built-in logos or upload a custom one.
-
 ## Development Environment
 
 - AndroidX
@@ -90,21 +95,40 @@ This fork currently adds orientation tracking for:
 
 ## Main Changed Files
 
+- `app/src/main/java/com/dctimer/APP.java`
 - `app/src/main/java/com/dctimer/activity/MainActivity.java`
+- `app/src/main/java/com/dctimer/database/DBHelper.java`
+- `app/src/main/java/com/dctimer/model/Result.java`
+- `app/src/main/java/com/dctimer/model/SmartCubeSolveReconstruction.java`
+- `app/src/main/java/com/dctimer/dialog/ImportExportDialog.java`
+- `app/src/main/java/com/dctimer/dialog/OtherTimerImportDialog.java`
+- `app/src/main/java/com/dctimer/dialog/ResultDialog.java`
+- `app/src/main/java/com/dctimer/dialog/SolveReplayDialog.java`
+- `app/src/main/java/com/dctimer/util/BackupManager.java`
+- `app/src/main/java/com/dctimer/util/ExternalTimerImportManager.java`
 - `app/src/main/java/com/dctimer/util/Moyu32CubeProtocol.java`
+- `app/src/main/java/com/dctimer/util/Stats.java`
+- `app/src/main/java/com/dctimer/util/SliceMoveUtils.java`
 - `app/src/main/java/com/dctimer/view/SmartCube3DView.java`
 - `app/src/main/java/com/dctimer/view/SmartCubeImageView.java`
+- `app/src/main/java/com/dctimer/view/SolveReplayRenderer.java`
 - `app/src/main/java/com/dctimer/util/SmartCubeLogoProvider.java`
 - `app/src/main/java/com/dctimer/activity/SmartCubeLogoCropActivity.java`
 - `app/src/main/java/com/dctimer/view/SmartCubeLogoCropView.java`
 - `app/src/main/java/com/dctimer/dialog/CubeStateDialog.java`
+- `app/src/main/res/menu/activity_main_drawer.xml`
+- `app/src/main/res/layout/dialog_import_export.xml`
 - `app/src/main/res/layout/dialog_cube_state.xml`
+- `app/src/main/res/layout/dialog_other_timer_import.xml`
+- `app/src/main/res/layout/dialog_other_timer_import_target.xml`
+- `app/src/main/res/layout/dialog_solve_replay.xml`
+- `app/src/main/res/layout-land/dialog_solve_replay.xml`
 - `app/src/main/res/layout/dialog_smart_cube_logo_picker.xml`
 
 ## Current Maintenance
 
 - Current maintenance and customization: Hu Tutu
-- Technical collaboration: Codex
+- Technical collaboration: Codex, Claude Code
 - Current repository: [HrrToT/DCTimerAI](https://github.com/HrrToT/DCTimerAI)
 
 ## Acknowledgements

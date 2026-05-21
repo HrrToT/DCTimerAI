@@ -47,6 +47,11 @@ public class TimesAdapter extends BaseAdapter {
         notifyDataSetChanged();
     }
 
+    public void setResult(Result result) {
+        this.result = result;
+        reload();
+    }
+
     public void setLength(int length) {
         this.length = length;
         notifyDataSetChanged();

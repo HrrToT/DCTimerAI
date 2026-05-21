@@ -9,23 +9,35 @@
 
     <RadioGroup
         android:id="@+id/rgroup"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:layout_marginTop="15dp">
 
         <RadioButton
+            android:id="@+id/rbt_backup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/backup_export" />
+
+        <RadioButton
+            android:id="@+id/rbt_restore"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/backup_import"
+            android:checked="true"/>
+
+        <RadioButton
             android:id="@+id/rbt_in"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/import_db" />
 
         <RadioButton
             android:id="@+id/rbt_out"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/export_db"
-            android:checked="true"/>
+            android:text="@string/export_db" />
     </RadioGroup>
 
 </LinearLayout>

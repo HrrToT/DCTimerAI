@@ -46,10 +46,11 @@ public class ResultDialog extends DialogFragment {
     private int penalty;
     private String comment;
     private String solution;
+    private String solveMeta;
     private int puzzle;
     private boolean expandSol;
 
-    public static ResultDialog newInstance(int num, String time, String scramble, String date, int penalty, String comment, String solution, int puzzle) {
+    public static ResultDialog newInstance(int num, String time, String scramble, String date, int penalty, String comment, String solution, int puzzle, String solveMeta) {
         ResultDialog dialog = new ResultDialog();
         Bundle bundle = new Bundle();
         bundle.putInt("num", num);
@@ -60,6 +61,7 @@ public class ResultDialog extends DialogFragment {
         bundle.putString("comment", comment);
         bundle.putString("solution", solution);
         bundle.putInt("puzzle", puzzle);
+        bundle.putString("solve_meta", solveMeta);
         dialog.setArguments(bundle);
         return dialog;
     }
@@ -74,6 +76,7 @@ public class ResultDialog extends DialogFragment {
         penalty = getArguments().getInt("penalty", 0);
         comment = getArguments().getString("comment");
         solution = getArguments().getString("solution");
+        solveMeta = getArguments().getString("solve_meta", "");
         puzzle = getArguments().getInt("puzzle", 0);
         AlertDialog.Builder buidler = new AlertDialog.Builder(getActivity());
         final View view = getActivity().getLayoutInflater().inflate(R.layout.dialog_time, null);
@@ -130,9 +133,18 @@ public class ResultDialog extends DialogFragment {
                     Toast.makeText(getActivity(), R.string.copy_success, Toast.LENGTH_SHORT).show();
                 }
             });
+            Button btnReplay = view.findViewById(R.id.btn_replay);
+            btnReplay.setVisibility(View.VISIBLE);
+            btnReplay.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    SolveReplayDialog replayDialog = SolveReplayDialog.newInstance(scramble, solution, solveMeta);
+                    replayDialog.show(getParentFragmentManager(), "replay");
+                }
+            });
         } else {
-            //btnSolution.setVisibility(View.GONE);
             llSolution.setVisibility(View.GONE);
+            view.findViewById(R.id.btn_replay).setVisibility(View.GONE);
         }
         tvSolution.setVisibility(View.GONE);
         llSolution.setOnClickListener(new View.OnClickListener() {

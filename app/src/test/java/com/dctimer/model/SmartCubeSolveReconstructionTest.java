@@ -5,6 +5,7 @@ import com.dctimer.util.Utils;
 
 import org.junit.Test;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,7 @@ public class SmartCubeSolveReconstructionTest {
     }
 
     @Test
-    public void recognizesOppositeLayerComboAsSliceWithinWindow() {
+    public void wrapsOppositeLayerTurnsAsSliceDisplayText() {
         List<SmartCubeSolveReconstruction.MoveEvent> raw = new ArrayList<>();
         raw.add(new SmartCubeSolveReconstruction.MoveEvent(0, 0, 0));
         raw.add(new SmartCubeSolveReconstruction.MoveEvent(11, 90, 90));
@@ -36,19 +37,35 @@ public class SmartCubeSolveReconstructionTest {
         SmartCubeSolveReconstruction reconstruction = SmartCubeSolveReconstruction.fromRawMoves(SOLVED, raw);
 
         assertEquals("E", reconstruction.getMoveSequence());
+        assertEquals("U D'", reconstruction.getPhysicalMoveSequence());
         assertEquals(1, reconstruction.getMoveCount());
     }
 
     @Test
-    public void keepsOppositeLayerTurnsSeparateOutsideWindow() {
+    public void wrapsOppositeLayerTurnsAsSliceWithoutTimeWindow() {
         List<SmartCubeSolveReconstruction.MoveEvent> raw = new ArrayList<>();
         raw.add(new SmartCubeSolveReconstruction.MoveEvent(0, 0, 0));
-        raw.add(new SmartCubeSolveReconstruction.MoveEvent(11, 120, 120));
+        raw.add(new SmartCubeSolveReconstruction.MoveEvent(11, 400, 400));
 
         SmartCubeSolveReconstruction reconstruction = SmartCubeSolveReconstruction.fromRawMoves(SOLVED, raw);
 
-        assertEquals("U D'", reconstruction.getMoveSequence());
-        assertEquals(2, reconstruction.getMoveCount());
+        assertEquals("E", reconstruction.getMoveSequence());
+        assertEquals("U D'", reconstruction.getPhysicalMoveSequence());
+        assertEquals(1, reconstruction.getMoveCount());
+    }
+
+    @Test
+    public void doesNotWrapNonConsecutiveOppositeLayerTurns() {
+        List<SmartCubeSolveReconstruction.MoveEvent> raw = new ArrayList<>();
+        raw.add(new SmartCubeSolveReconstruction.MoveEvent(0, 0, 0));
+        raw.add(new SmartCubeSolveReconstruction.MoveEvent(3, 90, 90));
+        raw.add(new SmartCubeSolveReconstruction.MoveEvent(11, 180, 180));
+
+        SmartCubeSolveReconstruction reconstruction = SmartCubeSolveReconstruction.fromRawMoves(SOLVED, raw);
+
+        assertEquals("U R D'", reconstruction.getMoveSequence());
+        assertEquals("U R D'", reconstruction.getPhysicalMoveSequence());
+        assertEquals(3, reconstruction.getMoveCount());
     }
 
     @Test
@@ -70,6 +87,40 @@ public class SmartCubeSolveReconstructionTest {
         SmartCubeSolveReconstruction reconstruction = SmartCubeSolveReconstruction.fromRawMoves(SOLVED, raw);
 
         assertTrue(reconstruction.toJson(1000).contains("\"method\":\"333-smart-cf4op\""));
+        assertTrue(reconstruction.toJson(1000).contains("\"physicalMoves\":\"R\""));
+        assertTrue(reconstruction.toJson(1000).contains("\"displayMoves\":\"R\""));
+        assertTrue(reconstruction.toJson(1000).contains("\"displaySteps\""));
+    }
+
+    @Test
+    public void displayStepCarriesPhysicalMovesForSliceReplay() {
+        List<SmartCubeSolveReconstruction.MoveEvent> raw = new ArrayList<>();
+        raw.add(new SmartCubeSolveReconstruction.MoveEvent(0, 80, 80));
+        raw.add(new SmartCubeSolveReconstruction.MoveEvent(11, 90, 170));
+
+        SmartCubeSolveReconstruction reconstruction = SmartCubeSolveReconstruction.fromRawMoves(SOLVED, raw);
+        String json = reconstruction.toJson(1000);
+
+        assertTrue(json.contains("\"notation\":\"E\""));
+        assertTrue(json.contains("\"physicalMoves\":[\"U\",\"D'\"]"));
+        assertTrue(json.contains("\"physicalMoveCount\":2"));
+    }
+
+    @Test
+    public void doesNotWrapSliceAcrossCfopPhaseBoundary() throws Exception {
+        Class<?> prettyMoveClass = Class.forName("com.dctimer.model.SmartCubeSolveReconstruction$PrettyMove");
+        Constructor<?> ctor = prettyMoveClass.getDeclaredConstructor(int.class, int.class, int.class,
+                int.class, int.class, int.class, int.class);
+        ctor.setAccessible(true);
+        List<Object> physicalMoves = new ArrayList<>();
+        physicalMoves.add(ctor.newInstance(0, 0, 0, 0, 80, 80, 0));
+        physicalMoves.add(ctor.newInstance(3, 2, 1, 1, 170, 170, 1));
+
+        Method method = SmartCubeSolveReconstruction.class.getDeclaredMethod("buildReplaySteps", List.class);
+        method.setAccessible(true);
+        List<?> replaySteps = (List<?>) method.invoke(null, physicalMoves);
+
+        assertEquals(2, replaySteps.size());
     }
 
     @Test
