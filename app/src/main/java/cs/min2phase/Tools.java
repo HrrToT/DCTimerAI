@@ -1,6 +1,7 @@
 package cs.min2phase;
 
 import java.util.Random;
+import java.util.ArrayList;
 import java.io.*;
 
 import solver.Cross;
@@ -446,6 +447,69 @@ public class Tools {
         CubieCube.CornMult(inverseTarget, current, correction);
         CubieCube.EdgeMult(inverseTarget, current, correction);
         return Util.toFaceCube(correction);
+    }
+
+    /**
+     * Generate a scramble sequence from currentFacelet to targetFacelet.
+     * @return String array: [0] = solution moves string, [1..n] = facelet after each prefix applied to currentFacelet.
+     *         Returns null on failure.
+     */
+    public static String[] computeGenScr(String currentFacelet, String targetFacelet) {
+        CubieCube current = new CubieCube();
+        if (Util.toCubieCube(currentFacelet, current) != 0) return null;
+        CubieCube target = new CubieCube();
+        if (Util.toCubieCube(targetFacelet, target) != 0) return null;
+
+        CubieCube invCurrent = new CubieCube(current);
+        invCurrent.temps = new CubieCube();
+        invCurrent.invCubieCube();
+        CubieCube toSolve = new CubieCube();
+        CubieCube.CornMult(invCurrent, target, toSolve);
+        CubieCube.EdgeMult(invCurrent, target, toSolve);
+
+        String facelet = Util.toFaceCube(toSolve);
+        Search search = new Search();
+        String solution = search.solution(facelet, 21, 10000, 100, Search.INVERSE_SOLUTION);
+        if (solution == null || solution.startsWith("Error")) return null;
+
+        String[] tokens = solution.split("\\s+");
+        ArrayList<String> states = new ArrayList<>();
+        StringBuilder validMoves = new StringBuilder();
+        CubieCube c1 = new CubieCube(current);
+        CubieCube c2 = new CubieCube();
+        CubieCube tmp;
+        for (String move : tokens) {
+            if (move.isEmpty()) continue;
+            int axis = -1;
+            switch (move.charAt(0)) {
+                case 'U': axis = 0; break;
+                case 'R': axis = 3; break;
+                case 'F': axis = 6; break;
+                case 'D': axis = 9; break;
+                case 'L': axis = 12; break;
+                case 'B': axis = 15; break;
+            }
+            if (axis < 0) continue;
+            if (move.length() >= 2) {
+                char suffix = move.charAt(1);
+                if (suffix == '2') axis++;
+                else if (suffix == '\'') axis += 2;
+            }
+            CubieCube.CornMult(c1, CubieCube.moveCube[axis], c2);
+            CubieCube.EdgeMult(c1, CubieCube.moveCube[axis], c2);
+            tmp = c1; c1 = c2; c2 = tmp;
+            states.add(Util.toFaceCube(c1));
+            if (validMoves.length() > 0) validMoves.append(' ');
+            validMoves.append(move);
+        }
+
+        if (states.isEmpty()) return null;
+        String[] result = new String[1 + states.size()];
+        result[0] = validMoves.toString();
+        for (int i = 0; i < states.size(); i++) {
+            result[i + 1] = states.get(i);
+        }
+        return result;
     }
 
     /**

@@ -46,6 +46,12 @@ This fork adds `MoYu AI / MoYu32` gyroscope and orientation data support, solve 
 
 ## Updates In This Fork
 
+### v2.28
+- **Fix: dropped moves around the solve-complete moment**: Improves smart-cube state freezing and delayed cleanup when a solve finishes, preventing the final move or immediately following turns from affecting result saving, solve reconstruction, and subsequent cube state.
+- **Auto compensation after scramble deviation**: During smart-cube `3x3` scrambling, if the physical cube deviates from the current scramble route, the app can generate a compensation sequence from the current state to the target scramble state, similar to csTimer-style compensation. A setting is also available to require returning to the original scramble route instead.
+- **Default scramble progress style**: Makes the full progress display the default style: completed moves are dimmed, the current move is highlighted, and remaining moves stay normal, making it easier to inspect both completed and upcoming steps.
+- **Half-turn hint**: Highlights partial half-turn states such as completing only one turn of `U2` in yellow, helping identify that the same face still needs to be turned again.
+
 ### v2.2.7
 - **Result sorting**: Changes the old "default (newest last) / newest first" to sort by completion date, corresponding to "Date (new to old) / Date (old to new)". Empty dates are treated as the earliest entries.
 - **Import / Export**

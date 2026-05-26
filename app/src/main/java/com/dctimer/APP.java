@@ -110,6 +110,7 @@ public class APP extends Application {
     public static boolean smartModeAutoOpenConnectDialog;
     public static boolean smartModeTapTimerToConnect;
     public static boolean smartModeAutoResetOrientation;
+    public static boolean smartCubeScrambleAutoCompensate;
 
     @Override
     public void onCreate() {
@@ -260,6 +261,7 @@ public class APP extends Application {
         smartModeAutoOpenConnectDialog = sp.getBoolean("smartmodeautoconnect", true);
         smartModeTapTimerToConnect = sp.getBoolean("smartmodetaptoconnect", true);
         smartModeAutoResetOrientation = sp.getBoolean("smartmodeautoorireset", true);
+        smartCubeScrambleAutoCompensate = sp.getBoolean("scauto", true);
     }
 
     public static void resetPref() {
@@ -283,6 +285,7 @@ public class APP extends Application {
         smartModeAutoOpenConnectDialog = true;
         smartModeTapTimerToConnect = true;
         smartModeAutoResetOrientation = true;
+        smartCubeScrambleAutoCompensate = true;
         colors[0] = 0xffffffff;	colors[1] = 0xff000000;	colors[2] = 0xffff00ff;
         colors[3] = 0xffee3333;	colors[4] = 0xff009900; colors[5] = 0xffffffff;
         colors[6] = 0xff000000;

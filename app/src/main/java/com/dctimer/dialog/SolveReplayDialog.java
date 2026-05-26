@@ -16,6 +16,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -46,7 +47,8 @@ public class SolveReplayDialog extends DialogFragment {
     private SmartCube3DView cube3DView;
     private SolveReplayRenderer sparklineView;
     private TextView tvMoveInfo, tvStats;
-    private Button btnPlay, btnSpeed;
+    private ImageButton btnPlay;
+    private Button btnSpeed;
 
     private List<SolveReplayRenderer.MoveStep> moveSteps = new ArrayList<>();
     private List<String> faceletStates = new ArrayList<>();
@@ -133,12 +135,14 @@ public class SolveReplayDialog extends DialogFragment {
         });
 
         btnPlay = view.findViewById(R.id.btn_play);
-        Button btnStart = view.findViewById(R.id.btn_start);
-        Button btnPrev = view.findViewById(R.id.btn_prev);
-        Button btnNext = view.findViewById(R.id.btn_next);
-        Button btnEnd = view.findViewById(R.id.btn_end);
+        ImageButton btnStart = view.findViewById(R.id.btn_start);
+        ImageButton btnPrev = view.findViewById(R.id.btn_prev);
+        ImageButton btnNext = view.findViewById(R.id.btn_next);
+        ImageButton btnEnd = view.findViewById(R.id.btn_end);
         btnSpeed = view.findViewById(R.id.btn_speed);
-        Button btnClose = view.findViewById(R.id.btn_close);
+        ImageButton btnClose = view.findViewById(R.id.btn_close);
+        updatePlayButtonIcon();
+        updateSpeedButtonText();
 
         btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -777,7 +781,7 @@ public class SolveReplayDialog extends DialogFragment {
             playNext();
         } else if (currentIndex >= moveSteps.size()) {
             isPlaying = false;
-            btnPlay.setText("▶");
+            updatePlayButtonIcon();
             updateUi();
         }
     }
@@ -821,7 +825,7 @@ public class SolveReplayDialog extends DialogFragment {
 
     private void jumpToStep(int step) {
         isPlaying = false;
-        btnPlay.setText("▶");
+        updatePlayButtonIcon();
         animatingStepIndex = -1;
         animatingSubMoveIndex = -1;
         currentIndex = Math.max(0, Math.min(step, moveSteps.size()));
@@ -833,7 +837,7 @@ public class SolveReplayDialog extends DialogFragment {
     private void stepNext() {
         if (currentIndex < moveSteps.size()) {
             isPlaying = false;
-            btnPlay.setText("▶");
+            updatePlayButtonIcon();
             animateDisplayStep(currentIndex, 0);
         }
     }
@@ -853,7 +857,7 @@ public class SolveReplayDialog extends DialogFragment {
         if (moveSteps.isEmpty()) return;
         if (isPlaying) {
             isPlaying = false;
-            btnPlay.setText("▶");
+            updatePlayButtonIcon();
         } else {
             if (currentIndex >= moveSteps.size()) {
                 currentIndex = 0;
@@ -863,7 +867,7 @@ public class SolveReplayDialog extends DialogFragment {
             animatingStepIndex = -1;
             animatingSubMoveIndex = -1;
             isPlaying = true;
-            btnPlay.setText("⏸");
+            updatePlayButtonIcon();
             playNext();
         }
     }
@@ -954,7 +958,23 @@ public class SolveReplayDialog extends DialogFragment {
         if (speed == 1.0f) speed = 2.0f;
         else if (speed == 2.0f) speed = 0.5f;
         else speed = 1.0f;
-        btnSpeed.setText("Speed: " + (speed == 1.0f ? "1x" : speed == 2.0f ? "2x" : "0.5x"));
+        updateSpeedButtonText();
+    }
+
+    private void updatePlayButtonIcon() {
+        if (btnPlay == null) return;
+        if (isPlaying) {
+            btnPlay.setImageResource(R.drawable.ic_replay_pause);
+            btnPlay.setContentDescription(getString(R.string.replay_pause));
+        } else {
+            btnPlay.setImageResource(R.drawable.ic_replay_play);
+            btnPlay.setContentDescription(getString(R.string.replay_play));
+        }
+    }
+
+    private void updateSpeedButtonText() {
+        if (btnSpeed == null) return;
+        btnSpeed.setText(speed == 1.0f ? "1x" : speed == 2.0f ? "2x" : "0.5x");
     }
 
     private void updateUi() {
