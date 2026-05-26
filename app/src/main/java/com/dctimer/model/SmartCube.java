@@ -32,6 +32,7 @@ public class SmartCube implements Serializable {
     private boolean scrambledNotified;
     private SmartCubeOrientation orientation;
     private transient OrientationChangedCallback orientationChangedCallback;
+    private int stateGeneration = 0;
 
     public SmartCube() {
         rawData = new ArrayList<>();
@@ -114,6 +115,10 @@ public class SmartCube implements Serializable {
         return reconstruction;
     }
 
+    public int getStateGeneration() {
+        return stateGeneration;
+    }
+
     public void applyMove(int move, int time, String scramble) {
         rawData.add(move << 16 | time);
         cc = cc.move(move);
@@ -128,6 +133,8 @@ public class SmartCube implements Serializable {
         }
         if (callback != null && Utils.isSolvedIgnoringRotation(cubeState))
             callback.onSolved(this);
+        else
+            stateGeneration++;
     }
 
     public void markScrambled() {
@@ -146,6 +153,7 @@ public class SmartCube implements Serializable {
     }
 
     public void markSolved() {
+        stateGeneration++;
         cubeState = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
         cc = new CubieCube();
         rawData = new ArrayList<>();

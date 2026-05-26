@@ -2220,6 +2220,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 cube.calcResult();
                 final int timeRes = cube.getResult();
                 final int moveCount = cube.getReconstructedMovesCount();
+                final int capturedGeneration = cube.getStateGeneration();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -2237,8 +2238,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                cube.markSolved();
                                 saveSmartCubeTime(timeRes, cube);
+                                if (cube.getStateGeneration() == capturedGeneration) {
+                                    cube.markSolved();
+                                }
                             }
                         }, SMART_CUBE_SOLVED_FINAL_MOVE_DELAY_MS);
                     }
