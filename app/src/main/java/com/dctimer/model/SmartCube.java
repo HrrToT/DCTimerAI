@@ -20,19 +20,16 @@ public class SmartCube implements Serializable {
     private List<Integer> rawData;
     private CubieCube cc;
     private int preIdx;
-    private int result;
-    private int moves;
-    private int reconstructedMoves;
-    private List<Integer> preMoveList;
-    private List<Integer> moveList;
     private String solveStartState;
-    private SmartCubeSolveReconstruction reconstruction;
     private transient StateChangedCallback callback;
     private String targetState;
     private boolean scrambledNotified;
     private SmartCubeOrientation orientation;
     private transient OrientationChangedCallback orientationChangedCallback;
     private int stateGeneration = 0;
+    // 最后一次 solve 的结果，供 UI 显示用（updateTime() 等）
+    // 真正的存档数据在 SolveSnapshot 中
+    private int lastResult;
 
     public SmartCube() {
         rawData = new ArrayList<>();
@@ -80,10 +77,6 @@ public class SmartCube implements Serializable {
         this.batteryValue = batteryValue;
     }
 
-    public int getResult() {
-        return result;
-    }
-
     public void setStateChangedCallback(StateChangedCallback callback) {
         this.callback = callback;
     }
@@ -103,16 +96,8 @@ public class SmartCube implements Serializable {
         }
     }
 
-    public int getMovesCount() {
-        return moves;
-    }
-
-    public int getReconstructedMovesCount() {
-        return reconstructedMoves;
-    }
-
-    public SmartCubeSolveReconstruction getReconstruction() {
-        return reconstruction;
+    public int getResult() {
+        return lastResult;
     }
 
     public int getStateGeneration() {
@@ -161,74 +146,27 @@ public class SmartCube implements Serializable {
         solveStartState = null;
         targetState = null;
         scrambledNotified = false;
+        lastResult = 0;
     }
 
-    public void clearLastReconstruction() {
-        reconstruction = null;
-        reconstructedMoves = 0;
-    }
-
-    public void calcResult() {
-        result = 0;
-        moves = rawData.size() - preIdx;
-        reconstructedMoves = 0;
-        reconstruction = null;
-        preMoveList = new ArrayList<>();
-        moveList = new ArrayList<>();
+    public SolveSnapshot freezeSnapshot() {
+        final int startIdx = this.preIdx;
         List<SmartCubeSolveReconstruction.MoveEvent> solveMoves = new ArrayList<>();
         int elapsed = 0;
-        for (int i = 0; i < preIdx; i++) {
-            int move = rawData.get(i) >> 16;
-            if (preMoveList.size() == 0) preMoveList.add(move);
-            else if (preMoveList.get(preMoveList.size() - 1) == move) {
-                if (move % 3 == 1) preMoveList.add(move);
-                else {
-                    int turn = move / 3;
-                    preMoveList.add(turn * 3 + 1);
-                }
-            } else preMoveList.add(move);
-        }
-        //Log.w("dct", "start "+preIdx+" size "+rawData.size());
-        for (int i = preIdx; i < rawData.size(); i++) {
-            int delta = rawData.get(i) & 0xffff;
-            if (i != preIdx) {
+        int result = 0;
+        for (int i = startIdx; i < rawData.size(); i++) {
+            int data = rawData.get(i);
+            int delta = data & 0xffff;
+            if (i != startIdx) {
                 result += delta;
                 elapsed += delta;
             }
-            //Log.w("dct", i+":"+rawData.get(i)+"/"+result);
-            int move = rawData.get(i) >> 16;
+            int move = data >> 16;
             solveMoves.add(new SmartCubeSolveReconstruction.MoveEvent(move, delta, elapsed));
-            if (moveList.size() == 0) moveList.add(move);
-            else if (moveList.get(moveList.size() - 1) == move) {
-                if (move % 3 == 1) moveList.add(move);
-                else {
-                    int turn = move / 3;
-                    moveList.set(moveList.size() - 1, turn * 3 + 1);
-                }
-            } else moveList.add(move);
         }
-        reconstruction = SmartCubeSolveReconstruction.fromRawMoves(solveStartState, solveMoves);
-        reconstructedMoves = reconstruction.getMoveCount();
-    }
-
-    public String getMoveSequence() {
-        if (reconstruction != null && reconstruction.getPrettySolve() != null && reconstruction.getPrettySolve().length() > 0) {
-            return reconstruction.getPrettySolve(result);
-        }
-        StringBuilder sb = new StringBuilder();
-        String[] suff = {"", "2", "'"};
-        for (int i = 0; i < moveList.size(); i++) {
-            int move = moveList.get(i);
-            sb.append("URFDLB".charAt(move / 3)).append(suff[move % 3]).append(" ");
-        }
-        return sb.toString();
-    }
-
-    public String getSolveMeta() {
-        if (reconstruction == null) {
-            return null;
-        }
-        return reconstruction.toJson(result);
+        SmartCubeSolveReconstruction reconstruction = SmartCubeSolveReconstruction.fromRawMoves(solveStartState, solveMoves);
+        lastResult = result;
+        return new SolveSnapshot(result, reconstruction);
     }
 
     public interface StateChangedCallback {

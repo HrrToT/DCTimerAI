@@ -45,7 +45,7 @@ other/
 promo-video/
 !website/assets/*.apk
 
-/train/
-
 /ref/
 
+temp_main_head.txt
+temp_cube_head.txt

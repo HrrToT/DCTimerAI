@@ -306,8 +306,10 @@ public class SolveReplayDialog extends DialogFragment {
                 }
 
                 if (json.has("displaySteps")) {
+                    // v2.2.8+ unified path: displaySteps is the single source of truth
                     parsedDisplaySteps = parseDisplaySteps(json.getJSONArray("displaySteps"));
                 } else {
+                    // LEGACY: pre-v2.2.8 data without displaySteps, fallback to raw moves text
                     String physicalMoves = json.optString("physicalMoves", "");
                     if (!TextUtils.isEmpty(physicalMoves)) {
                         replayMovesText = physicalMoves;
@@ -331,6 +333,7 @@ public class SolveReplayDialog extends DialogFragment {
             return;
         }
 
+        // LEGACY: pre-v2.2.8 fallback — re-parse moves text into steps
         moveInts = parseMovesText(replayMovesText);
         if (!phaseInfos.isEmpty()) {
             phaseForMove = buildPhaseForMove(moveInts.size());
