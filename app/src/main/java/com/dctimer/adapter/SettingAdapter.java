@@ -83,6 +83,7 @@ public class SettingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public static final int ST_SMART_MODE_AUTO_RESET_ORIENTATION = 65;
     public static final int ST_SMART_MODE_RESET_SOLVED = 66;
     public static final int ST_SMART_MODE_CENTER_LOGO = 67;
+    public static final int ST_SMART_SCRAMBLE_DEVIATION = 68;
     private MainActivity dct;
     private Map<Integer, String> headers;
     private List<Map<String, Object>> cells;
@@ -271,6 +272,9 @@ public class SettingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     break;
                 case ST_SMART_MODE_AUTO_RESET_ORIENTATION:
                     map.put("detail", smartModeAutoResetOrientation);
+                    break;
+                case ST_SMART_SCRAMBLE_DEVIATION:
+                    map.put("detail", dct.getResources().getStringArray(R.array.opt_smart_scramble_deviation)[smartCubeScrambleAutoCompensate ? 0 : 1]);
                     break;
                 case ST_SMART_MODE_CENTER_LOGO:
                     map.put("detail", dct.getSmartCubeLogoSettingLabel());
