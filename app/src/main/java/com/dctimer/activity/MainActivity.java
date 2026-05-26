@@ -1752,7 +1752,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return;
         }
         cube.markSolved();
-        cube.clearLastReconstruction();
         if (bluetoothTools != null) {
             bluetoothTools.notifyLocalCubeReset(cube.getCubeState());
         }
@@ -2217,10 +2216,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         @Override
         public void onSolved(final SmartCube cube) {
             if (timer.getTimerState() == DCTTimer.RUNNING) {
-                cube.calcResult();
-                final int timeRes = cube.getResult();
-                final int moveCount = cube.getReconstructedMovesCount();
                 final int capturedGeneration = cube.getStateGeneration();
+                final SolveSnapshot snapshot = cube.freezeSnapshot();
+                final int timeRes = snapshot.getResult();
+                final int moveCount = snapshot.getReconstructedMovesCount();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -2238,7 +2237,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                saveSmartCubeTime(timeRes, cube);
+                                saveSmartCubeTime(timeRes, snapshot);
                                 if (cube.getStateGeneration() == capturedGeneration) {
                                     cube.markSolved();
                                 }
@@ -5062,18 +5061,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         isDNF = false;
     }
 
-    private void saveSmartCubeTime(int time, SmartCube cube) {
-        addTime(time, 0, cube);
+    private void saveSmartCubeTime(int time, SolveSnapshot snapshot) {
+        addTime(time, 0, snapshot);
         penaltyTime = 0;
         isDNF = false;
     }
 
     public void addTime(int time, int penalty) {
-        addTime(time, penalty, bluetoothTools == null ? null : bluetoothTools.getCube());
+        addTime(time, penalty, (SolveSnapshot) null);
     }
 
-    private void addTime(int time, int penalty, SmartCube cube) {
-        result.insert(time, penalty, currentScramble.getScramble(), multiPhase > 0, cube);
+    private void addTime(int time, int penalty, SolveSnapshot snapshot) {
+        result.insert(time, penalty, currentScramble.getScramble(), multiPhase > 0, snapshot);
         btnSessionMean.setText(getString(R.string.session_mean, result.getSessionMean()));
         result.calcAvg();
         if (multiPhase > 0) result.calcMpMean();

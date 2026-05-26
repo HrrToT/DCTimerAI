@@ -704,6 +704,10 @@ public class SmartCubeSolveReconstruction {
             appendPhysicalMovesJson(sb, step.physicalMoves);
             sb.append(',');
             appendPhysicalDeltasJson(sb, step.physicalMoves);
+            sb.append(',');
+            sb.append("\"countAs\":1");
+            sb.append(',');
+            appendJsonField(sb, "kind", displayMove.axis >= 6 ? "ems" : "normal");
             sb.append('}');
         }
         sb.append(']');

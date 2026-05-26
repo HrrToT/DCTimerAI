@@ -229,7 +229,7 @@ public class Result {
         return cursor.getString(column + offset);
     }
 
-    public void insert(int time, int penalty, String scramble, boolean mp, SmartCube cube) {
+    public void insert(int time, int penalty, String scramble, boolean mp, SolveSnapshot snapshot) {
         addResult(time, penalty, mp);
         int d = 1;
         if (penalty == 2) penalty = d = 0;
@@ -240,11 +240,11 @@ public class Result {
         cv.put("resd", d);
         cv.put("scr", scramble);
         cv.put("time", StringUtils.getDate());
-        if (cube != null) {
-            String move = cube.getMoveSequence();
+        if (snapshot != null) {
+            String move = snapshot.getMoveSequence();
             if (!TextUtils.isEmpty(move))
             cv.put("moves", move);
-            String solveMeta = cube.getSolveMeta();
+            String solveMeta = snapshot.getSolveMeta();
             if (!TextUtils.isEmpty(solveMeta)) {
                 cv.put("solve_meta", solveMeta);
             }
