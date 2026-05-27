@@ -223,6 +223,14 @@
     <string name="backup_import_fail">Restore failed</string>
     <string name="btn_replay">Replay</string>
     <string name="solve_replay_title">Solve Replay</string>
+    <string name="replay_start">Jump to start</string>
+    <string name="replay_previous">Previous move</string>
+    <string name="replay_play">Play replay</string>
+    <string name="replay_pause">Pause replay</string>
+    <string name="replay_next">Next move</string>
+    <string name="replay_end">Jump to end</string>
+    <string name="replay_speed">Playback speed</string>
+    <string name="replay_close">Close replay</string>
     <string name="import_db">Legacy import - data only - old DCTimer compatible</string>
     <string name="export_db">Legacy export - data only - old DCTimer compatible</string>
     <string name="import_export">Import/Export</string>

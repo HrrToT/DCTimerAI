@@ -52,6 +52,7 @@
 - **偏离打乱时自动补偿**：智能魔方 `3x3` 打乱过程中，如果实物魔方偏离当前打乱路线，可选择自动生成从当前状态到目标打乱状态的补偿公式，体验类似 csTimer 的补偿打乱；也可在设置中切换为“必须回到原始打乱路线”。
 - **打乱公式默认推进模式**：将“已完成→灰、当前→高亮、剩余→正常”的完整公式推进模式设为默认，便于检查已完成步骤和当前待转步骤。
 - **半转提醒**：对 `U2` 这类半转只完成一半的状态进行黄色提示，帮助识别“已转一半、还需继续同面转动”的情况。
+- **回放控制图标**：回放弹窗的起点、上一步、播放 / 暂停、下一步、终点和关闭按钮改为本地图标。
 
 ### v2.2.7
 - **成绩排序**：将原“默认（最新在下）/ 最新在上”改为按完成日期排序，分别对应“日期（从新到旧）/ 日期（从旧到新）”；日期为空时按最早处理。
@@ -131,6 +132,7 @@
 - `app/src/main/res/layout/dialog_other_timer_import_target.xml`
 - `app/src/main/res/layout/dialog_solve_replay.xml`
 - `app/src/main/res/layout-land/dialog_solve_replay.xml`
+- `app/src/main/res/drawable/ic_replay_*.xml`
 - `app/src/main/res/layout/dialog_smart_cube_logo_picker.xml`
 
 ## 当前维护

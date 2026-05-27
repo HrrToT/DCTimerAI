@@ -201,6 +201,14 @@
     <string name="backup_import_fail">恢复失败</string>
     <string name="btn_replay">回放</string>
     <string name="solve_replay_title">解法回放</string>
+    <string name="replay_start">跳到开头</string>
+    <string name="replay_previous">上一步</string>
+    <string name="replay_play">播放回放</string>
+    <string name="replay_pause">暂停回放</string>
+    <string name="replay_next">下一步</string>
+    <string name="replay_end">跳到结尾</string>
+    <string name="replay_speed">回放速度</string>
+    <string name="replay_close">关闭回放</string>
     <string name="import_db">旧版导入 - 数据 - 兼容旧版DCTimer</string>
     <string name="export_db">旧版导出 - 数据 - 兼容旧版DCTimer</string>
     <string name="import_export">导入导出数据库</string>

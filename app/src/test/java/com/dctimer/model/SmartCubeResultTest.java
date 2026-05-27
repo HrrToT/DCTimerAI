@@ -18,8 +18,8 @@ public class SmartCubeResultTest {
         cube.applyMove(3, 500, null);
         cube.applyMove(6, 700, null);
 
-        cube.calcResult();
+        SolveSnapshot snapshot = cube.freezeSnapshot();
 
-        assertEquals(1200, cube.getResult());
+        assertEquals(1200, snapshot.getResult());
     }
 }

@@ -41,6 +41,7 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.*;
@@ -1432,7 +1433,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int baseColor = APP.getTextColor();
         int nextColor = 0xff00cc66;
         int doneColor = 0xffaaaaaa;
-        int pendingColor = 0xffffaa00;
+        int pendingColor = 0xffffcc00;
+        int highlightBgColor = 0x30888888;
         int correctionColor = 0xffd85a3a;
         if (smartCubeCorrectionLocked) {
             SpannableStringBuilder lockedBuilder = new SpannableStringBuilder(getString(R.string.smart_cube_restore_first));
@@ -1458,12 +1460,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             for (int i = 0; i < displayMoves.size(); i++) {
                 if (i > 0) correctionBuilder.append(' ');
                 int start = correctionBuilder.length();
-                correctionBuilder.append(displayMoves.get(i));
+                String text = displayMoves.get(i);
+                if (text.length() == 1) text += ' ';
+                correctionBuilder.append(text);
                 int end = correctionBuilder.length();
                 int spanColor = baseColor;
+                boolean isHighlighted = false;
                 if (correctionFlags.get(i)) {
                     spanColor = correctionColor;
                 } else if (!highlightedNext) {
+                    isHighlighted = true;
                     if (!TextUtils.isEmpty(smartCubeCorrectionBasePendingMove)
                             && smartCubeCorrectionBasePendingMove.equals(displayMoves.get(i))) {
                         spanColor = pendingColor;
@@ -1473,6 +1479,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     highlightedNext = true;
                 }
                 correctionBuilder.setSpan(new ForegroundColorSpan(spanColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                if (isHighlighted) {
+                    correctionBuilder.setSpan(new BackgroundColorSpan(highlightBgColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
             }
             return correctionBuilder;
         }
@@ -1484,10 +1493,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 int start = builder.length();
                 boolean isPending = (i == smartCubeScrambleProgress
                         && !TextUtils.isEmpty(smartCubeScramblePendingMove));
+                boolean isCurrent = (i == smartCubeScrambleProgress);
                 if (isPending) {
-                    builder.append(smartCubeScramblePendingMove);
+                    String text = smartCubeScramblePendingMove;
+                    if (text.length() == 1) text += ' ';
+                    builder.append(text);
                 } else {
-                    builder.append(smartCubeScrambleMoves.get(i));
+                    String text = smartCubeScrambleMoves.get(i);
+                    if (text.length() == 1) text += ' ';
+                    builder.append(text);
                 }
                 int end = builder.length();
                 int spanColor;
@@ -1501,6 +1515,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     spanColor = baseColor;
                 }
                 builder.setSpan(new ForegroundColorSpan(spanColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                if (isCurrent) {
+                    builder.setSpan(new BackgroundColorSpan(highlightBgColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
             }
             return builder;
         }
@@ -1509,10 +1526,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             int start = builder.length();
             boolean isPending = (i == smartCubeScrambleProgress
                     && !TextUtils.isEmpty(smartCubeScramblePendingMove));
+            boolean isCurrent = (i == smartCubeScrambleProgress);
             if (isPending) {
-                builder.append(smartCubeScramblePendingMove);
+                String text = smartCubeScramblePendingMove;
+                if (text.length() == 1) text += ' ';
+                builder.append(text);
             } else {
-                builder.append(smartCubeScrambleMoves.get(i));
+                String text = smartCubeScrambleMoves.get(i);
+                if (text.length() == 1) text += ' ';
+                builder.append(text);
             }
             int end = builder.length();
             int spanColor;
@@ -1526,6 +1548,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 spanColor = baseColor;
             }
             builder.setSpan(new ForegroundColorSpan(spanColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            if (isCurrent) {
+                builder.setSpan(new BackgroundColorSpan(highlightBgColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
         }
         return builder;
     }

@@ -51,6 +51,7 @@ This fork adds `MoYu AI / MoYu32` gyroscope and orientation data support, solve 
 - **Auto compensation after scramble deviation**: During smart-cube `3x3` scrambling, if the physical cube deviates from the current scramble route, the app can generate a compensation sequence from the current state to the target scramble state, similar to csTimer-style compensation. A setting is also available to require returning to the original scramble route instead.
 - **Default scramble progress style**: Makes the full progress display the default style: completed moves are dimmed, the current move is highlighted, and remaining moves stay normal, making it easier to inspect both completed and upcoming steps.
 - **Half-turn hint**: Highlights partial half-turn states such as completing only one turn of `U2` in yellow, helping identify that the same face still needs to be turned again.
+- **Replay control icons**: Replaces the replay dialog's start, previous, play / pause, next, end, and close text controls with local vector icons, reducing visual noise from text buttons and special-symbol rendering. The speed control keeps a compact `1x / 2x / 0.5x` text label.
 
 ### v2.2.7
 - **Result sorting**: Changes the old "default (newest last) / newest first" to sort by completion date, corresponding to "Date (new to old) / Date (old to new)". Empty dates are treated as the earliest entries.
@@ -129,6 +130,7 @@ This fork currently adds orientation tracking for:
 - `app/src/main/res/layout/dialog_other_timer_import_target.xml`
 - `app/src/main/res/layout/dialog_solve_replay.xml`
 - `app/src/main/res/layout-land/dialog_solve_replay.xml`
+- `app/src/main/res/drawable/ic_replay_*.xml`
 - `app/src/main/res/layout/dialog_smart_cube_logo_picker.xml`
 
 ## Current Maintenance

@@ -1,7 +1,7 @@
 {
-  "versionCode": 224,
-  "versionName": "2.2.4",
+  "versionCode": 228,
+  "versionName": "2.2.8",
   "releaseUrl": "https://github.com/HrrToT/DCTimerAI/releases/latest",
-  "apkUrl": "https://raw.githubusercontent.com/HrrToT/DCTimerAI/master/website/assets/DCTimerAI-v2.2.4.apk",
-  "notes": "DCTimerAI v2.2.4\n-新增 MoYu AI / MoYu32 姿态跟随\n-新增一键姿态重置\n-优化智能魔方 3D 渲染"
+  "apkUrl": "https://raw.githubusercontent.com/HrrToT/DCTimerAI/master/website/assets/DCTimerAI-v2.2.8.apk",
+  "notes": "DCTimerAI v2.2.8"
 }

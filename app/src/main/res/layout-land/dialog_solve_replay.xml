@@ -26,56 +26,56 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-        <FrameLayout
-            android:id="@+id/fl_cube"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="7" />
+            <FrameLayout
+                android:id="@+id/fl_cube"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="7" />
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="4"
-            android:gravity="center_horizontal"
-            android:orientation="vertical"
-            android:paddingLeft="10dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="4"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
 
-            <TextView
-                android:id="@+id/tv_move_info"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:gravity="center"
-                android:lineSpacingMultiplier="1.15"
-                android:minHeight="44dp"
-                android:textColor="#E0E0E0"
-                android:textSize="16sp" />
+                <TextView
+                    android:id="@+id/tv_move_info"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:gravity="center"
+                    android:lineSpacingMultiplier="1.15"
+                    android:minHeight="44dp"
+                    android:textColor="#E0E0E0"
+                    android:textSize="16sp" />
 
-            <View
-                android:id="@+id/v_info_divider"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="6dp"
-                android:background="#33FFFFFF" />
+                <View
+                    android:id="@+id/v_info_divider"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="6dp"
+                    android:background="#33FFFFFF" />
 
-            <TextView
-                android:id="@+id/tv_stats"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:gravity="center"
-                android:lineSpacingMultiplier="1.2"
-                android:textColor="#BDBDBD"
-                android:textSize="13sp" />
+                <TextView
+                    android:id="@+id/tv_stats"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:gravity="center"
+                    android:lineSpacingMultiplier="1.2"
+                    android:textColor="#BDBDBD"
+                    android:textSize="13sp" />
 
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-        </LinearLayout>
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
         </LinearLayout>
 
         <com.dctimer.view.SolveReplayRenderer
@@ -95,87 +95,101 @@
             android:paddingRight="4dp"
             android:paddingBottom="4dp">
 
-        <Button
-            android:id="@+id/btn_start"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_weight="1"
-            android:minWidth="0dp"
-            android:padding="0dp"
-            android:text="⏮"
-            android:textAllCaps="false"
-            android:textSize="14sp" />
+            <ImageButton
+                android:id="@+id/btn_start"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1"
+                android:background="@drawable/item_background"
+                android:contentDescription="@string/replay_start"
+                android:minWidth="0dp"
+                android:padding="7dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_replay_skip_start"
+                android:tint="#E0E0E0" />
 
-        <Button
-            android:id="@+id/btn_prev"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_marginLeft="4dp"
-            android:layout_weight="1"
-            android:minWidth="0dp"
-            android:padding="0dp"
-            android:text="⏪"
-            android:textAllCaps="false"
-            android:textSize="14sp" />
+            <ImageButton
+                android:id="@+id/btn_prev"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_marginLeft="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/item_background"
+                android:contentDescription="@string/replay_previous"
+                android:minWidth="0dp"
+                android:padding="7dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_replay_step_back"
+                android:tint="#E0E0E0" />
 
-        <Button
-            android:id="@+id/btn_play"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_marginLeft="4dp"
-            android:layout_weight="1.2"
-            android:minWidth="0dp"
-            android:padding="0dp"
-            android:text="▶"
-            android:textAllCaps="false"
-            android:textSize="15sp" />
+            <ImageButton
+                android:id="@+id/btn_play"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_marginLeft="4dp"
+                android:layout_weight="1.2"
+                android:background="@drawable/item_background"
+                android:contentDescription="@string/replay_play"
+                android:minWidth="0dp"
+                android:padding="7dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_replay_play"
+                android:tint="#E0E0E0" />
 
-        <Button
-            android:id="@+id/btn_next"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_marginLeft="4dp"
-            android:layout_weight="1"
-            android:minWidth="0dp"
-            android:padding="0dp"
-            android:text="⏩"
-            android:textAllCaps="false"
-            android:textSize="14sp" />
+            <ImageButton
+                android:id="@+id/btn_next"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_marginLeft="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/item_background"
+                android:contentDescription="@string/replay_next"
+                android:minWidth="0dp"
+                android:padding="7dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_replay_step_forward"
+                android:tint="#E0E0E0" />
 
-        <Button
-            android:id="@+id/btn_end"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_marginLeft="4dp"
-            android:layout_weight="1"
-            android:minWidth="0dp"
-            android:padding="0dp"
-            android:text="⏭"
-            android:textAllCaps="false"
-            android:textSize="14sp" />
-
-        <Button
-            android:id="@+id/btn_speed"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_marginLeft="6dp"
-            android:layout_weight="1.8"
-            android:minWidth="0dp"
-            android:padding="0dp"
-            android:text="Speed: 1x"
-            android:textAllCaps="false"
-            android:textSize="12sp" />
+            <ImageButton
+                android:id="@+id/btn_end"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_marginLeft="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/item_background"
+                android:contentDescription="@string/replay_end"
+                android:minWidth="0dp"
+                android:padding="7dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_replay_skip_end"
+                android:tint="#E0E0E0" />
 
             <Button
+                android:id="@+id/btn_speed"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_marginLeft="6dp"
+                android:layout_weight="1.8"
+                android:contentDescription="@string/replay_speed"
+                android:minWidth="0dp"
+                android:padding="0dp"
+                android:text="1x"
+                android:textAllCaps="false"
+                android:textSize="12sp" />
+
+            <ImageButton
                 android:id="@+id/btn_close"
                 android:layout_width="0dp"
                 android:layout_height="38dp"
                 android:layout_marginLeft="6dp"
                 android:layout_weight="1.4"
+                android:background="@drawable/item_background"
+                android:contentDescription="@string/replay_close"
                 android:minWidth="0dp"
-                android:text="@string/btn_close"
-                android:textAllCaps="false"
-                android:textSize="12sp" />
+                android:padding="7dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_close"
+                android:tint="#E0E0E0" />
         </LinearLayout>
     </LinearLayout>
 

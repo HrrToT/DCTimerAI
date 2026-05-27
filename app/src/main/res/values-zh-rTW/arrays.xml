@@ -315,6 +315,7 @@
     <array name="item_smart">
         <item>解法欄位生成基準</item>
         <item>轉亂推進樣式</item>
+        <item>轉亂偏離時</item>
         <item>佈局</item>
         <item>自動彈出連接視窗</item>
         <item>點擊計時區域時打開連接視窗</item>
@@ -340,9 +341,14 @@
         <item>藍</item>
     </array>
 
+    <array name="opt_smart_scramble_deviation">
+        <item>自動補償</item>
+        <item>必須回到原轉亂路線</item>
+    </array>
+
     <array name="opt_smart_scramble_progress">
-        <item>已推進自動消失</item>
         <item>已推進變淺保留</item>
+        <item>已推進自動消失</item>
     </array>
 
     <array name="opt_smart_layout">
