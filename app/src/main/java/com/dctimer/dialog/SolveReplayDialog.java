@@ -175,33 +175,9 @@ public class SolveReplayDialog extends DialogFragment {
 
         parseData();
 
-        runEmsDebug();
-
         dialog.setContentView(view);
         dialog.setCanceledOnTouchOutside(false);
         return dialog;
-    }
-
-    private void runEmsDebug() {
-        try {
-            java.io.File file = new java.io.File(getActivity().getFilesDir(), "debug_ems.txt");
-            java.io.PrintWriter pw = new java.io.PrintWriter(file);
-            pw.println("=== EMS Debug ===");
-            String[] tests = {"E", "E'", "M", "M'", "S", "S'"};
-            String[] labels = {"E (CW)", "E' (CCW)", "M (CW)", "M' (CCW)", "S (CW)", "S' (CCW)"};
-            for (int t = 0; t < tests.length; t++) {
-                CubieCube cc = new CubieCube();
-                int move = notationToMove(tests[t]);
-                pw.println("--- " + labels[t] + " move=" + move + " ---");
-                cc = applyMoveToCube(cc, move);
-                String fl = cs.min2phase.Util.toFaceCube(cc);
-                pw.println("facelet: " + fl);
-                pw.println();
-            }
-            pw.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -331,7 +307,6 @@ public class SolveReplayDialog extends DialogFragment {
                 totalTimeMs = moveSteps.get(moveSteps.size() - 1).cumulativeMs;
             }
             computeFaceletStates(scramble);
-            dumpReplayData(scramble, "displaySteps", solveMeta, flattenPhysicalMoves(), null);
             sparklineView.setData(moveSteps, phaseInfos, totalTimeMs, inspectionMs);
             updateUi();
             return;
@@ -385,9 +360,6 @@ public class SolveReplayDialog extends DialogFragment {
         }
 
         computeFaceletStates(scramble);
-
-        // Debug: log data to file
-        dumpReplayData(scramble, replayMovesText, solveMeta, moveInts, phaseForMove);
 
         sparklineView.setData(moveSteps, phaseInfos, totalTimeMs, inspectionMs);
         updateUi();
@@ -483,41 +455,6 @@ public class SolveReplayDialog extends DialogFragment {
             result.addAll(step.physicalMoves);
         }
         return result;
-    }
-
-    private void dumpReplayData(String scramble, String movesText, String solveMeta,
-                                List<Integer> moveInts, int[] phaseForMove) {
-        try {
-            java.io.File file = new java.io.File(getActivity().getFilesDir(), "replay_dump.txt");
-            java.io.PrintWriter pw = new java.io.PrintWriter(file);
-            pw.println("=== REPLAY DUMP ===");
-            pw.println("scramble: [" + scramble + "]");
-            pw.println("movesText length: " + (movesText != null ? movesText.length() : 0));
-            pw.println("moveInts.size: " + moveInts.size());
-            for (int i = 0; i < moveInts.size(); i++) {
-                int m = moveInts.get(i);
-                String phase = phaseForMove != null && i < phaseForMove.length ? String.valueOf(phaseForMove[i]) : "?";
-                pw.println("  move[" + i + "]=" + moveToNotation(m) + " phase=" + phase + " code=" + m);
-            }
-            pw.println("---");
-            pw.println("solveMeta length: " + (solveMeta != null ? solveMeta.length() : 0));
-            pw.println("solveMeta: " + solveMeta);
-            pw.println("--- phases ---");
-            for (int p = 0; p < phaseInfos.size(); p++) {
-                SolveReplayRenderer.PhaseInfo pi = phaseInfos.get(p);
-                pw.println("  Phase[" + p + "] " + pi.name + " moveCount=" + pi.moveCount
-                        + " startMs=" + pi.startMs + " endMs=" + pi.endMs);
-            }
-            pw.println("--- faceletStates ---");
-            for (int i = 0; i < faceletStates.size() && i < 15; i++) {
-                pw.println("  state[" + i + "]=" + faceletStates.get(i));
-            }
-            pw.println("totalTimeMs=" + totalTimeMs + " inspectionMs=" + inspectionMs);
-            pw.close();
-            android.util.Log.w("ReplayDump", "Dumped to " + file.getAbsolutePath());
-        } catch (Exception e) {
-            android.util.Log.w("ReplayDump", "Dump failed", e);
-        }
     }
 
     private int sumAfterFirst(List<Integer> deltas) {
