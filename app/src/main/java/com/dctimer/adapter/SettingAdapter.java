@@ -84,6 +84,7 @@ public class SettingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public static final int ST_SMART_MODE_RESET_SOLVED = 66;
     public static final int ST_SMART_MODE_CENTER_LOGO = 67;
     public static final int ST_SMART_SCRAMBLE_DEVIATION = 68;
+    public static final int ST_SMART_CURRENT_MOVE_HIGHLIGHT_OPACITY = 69;
     private MainActivity dct;
     private Map<Integer, String> headers;
     private List<Map<String, Object>> cells;
@@ -186,6 +187,10 @@ public class SettingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     break;
                 case ST_SMART_SCRAMBLE_PROGRESS:
                     map.put("detail", dct.getResources().getStringArray(R.array.opt_smart_scramble_progress)[smartCubeScrambleProgressStyle]);
+                    break;
+                case ST_SMART_CURRENT_MOVE_HIGHLIGHT_OPACITY:
+                    map.put("detail", dct.getSmartCubeCurrentMoveHighlightOpacityLabel(smartCubeCurrentMoveHighlightOpacity));
+                    map.put("value", smartCubeCurrentMoveHighlightOpacity);
                     break;
                 case ST_SMART_LAYOUT:
                     map.put("detail", dct.getResources().getStringArray(R.array.opt_smart_layout)[smartCubeLayoutMode]);
@@ -333,6 +338,12 @@ public class SettingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                             detail = String.valueOf(i + 12);
                             map.put("detail", detail);
                             dct.updatePref(settingId, detail);
+                            break;
+                        case ST_SMART_CURRENT_MOVE_HIGHLIGHT_OPACITY:
+                            detail = dct.getSmartCubeCurrentMoveHighlightOpacityLabel(i);
+                            map.put("detail", detail);
+                            dct.updatePref(settingId, detail);
+                            dct.previewSmartCubeCurrentMoveHighlightOpacity(i);
                             break;
                         case ST_IMAGE_SIZE:    //打乱状态
                             //map.put("value", i);

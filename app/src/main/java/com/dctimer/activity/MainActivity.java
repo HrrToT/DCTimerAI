@@ -41,7 +41,6 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.*;
@@ -168,7 +167,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private final List<String> smartCubeScrambleMoves = new ArrayList<>();
     private final List<String> smartCubeScrambleStates = new ArrayList<>();
     private int smartCubeScrambleProgress;
-    private int smartCubeScrambleHiddenPrefix;
     private String smartCubeScramblePendingMove;
     private String smartCubeScrambleGenStartState;
     private int smartCubeCorrectionBaseProgress = -1;
@@ -214,6 +212,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private static final String PERMISSION_BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT";
     private static final String SOLVED_FACELET = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
     private static final int[] VIBRATE_TIME = {30, 50, 80, 150, 240};
+    private static final int SMART_CUBE_HIGHLIGHT_CORNER_RADIUS_DP = 6;
+    private static final int SMART_CUBE_HIGHLIGHT_HORIZONTAL_PADDING_DP = 4;
+    private static final int SMART_CUBE_HIGHLIGHT_VERTICAL_PADDING_DP = 1;
     private static final int[] ITEMS_ID = {R.array.opt_enter_time, R.array.opt_timer_update, R.array.opt_accuracy, R.array.opt_multi_phase,
             R.array.opt_average, R.array.opt_solve_333, R.array.opt_solve_222, R.array.opt_mega_scheme,
             R.array.opt_timer_font, R.array.opt_screen_ori, R.array.opt_vibrate, R.array.opt_vibrate_time,
@@ -227,6 +228,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         SmartCubeSequenceProgress(int progress, String pendingMove) {
             this.progress = progress;
             this.pendingMove = pendingMove;
+        }
+    }
+
+    private static class SmartCubeDisplayMoveToken {
+        final String displayText;
+        final String widthReference;
+        final boolean correction;
+        final boolean correctionBasePending;
+
+        SmartCubeDisplayMoveToken(String displayText, String widthReference, boolean correction, boolean correctionBasePending) {
+            this.displayText = displayText;
+            this.widthReference = widthReference;
+            this.correction = correction;
+            this.correctionBasePending = correctionBasePending;
         }
     }
 
@@ -1290,7 +1305,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void clearSmartCubeScrambleCache() {
         smartCubeScrambleCache = "";
         smartCubeScrambleProgress = 0;
-        smartCubeScrambleHiddenPrefix = 0;
         smartCubeScramblePendingMove = null;
         smartCubeScrambleGenStartState = null;
         smartCubeScrambleMoves.clear();
@@ -1358,15 +1372,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (progressInfo != null) {
             smartCubeScrambleProgress = progressInfo.progress;
             smartCubeScramblePendingMove = progressInfo.pendingMove;
-            if (smartCubeScrambleProgress == 0) {
-                smartCubeScrambleHiddenPrefix = 0;
-            }
             clearSmartCubeCorrectionSuggestion();
             return;
         }
         if (Utils.isSolvedIgnoringRotation(cubeState) || SOLVED_FACELET.equals(cubeState)) {
             smartCubeScrambleProgress = 0;
-            smartCubeScrambleHiddenPrefix = 0;
             smartCubeScramblePendingMove = null;
             smartCubeScrambleGenStartState = null;
             clearSmartCubeCorrectionSuggestion();
@@ -1381,7 +1391,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 if (retryInfo != null) {
                     smartCubeScrambleProgress = retryInfo.progress;
                     smartCubeScramblePendingMove = retryInfo.pendingMove;
-                    smartCubeScrambleHiddenPrefix = 0;
                     clearSmartCubeCorrectionSuggestion();
                     return;
                 }
@@ -1418,7 +1427,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
             smartCubeScrambleProgress = 0;
             smartCubeScramblePendingMove = null;
-            smartCubeScrambleHiddenPrefix = 0;
             clearSmartCubeCorrectionSuggestion();
         } catch (Exception e) {
             Log.e("dct", "genScr generation failed", e);
@@ -1434,7 +1442,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int nextColor = 0xff00cc66;
         int doneColor = 0xffaaaaaa;
         int pendingColor = 0xffffcc00;
-        int highlightBgColor = 0x30888888;
+        int highlightBgColor = getSmartCubeHighlightBgColor();
         int correctionColor = 0xffd85a3a;
         if (smartCubeCorrectionLocked) {
             SpannableStringBuilder lockedBuilder = new SpannableStringBuilder(getString(R.string.smart_cube_restore_first));
@@ -1442,68 +1450,51 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return lockedBuilder;
         }
         if (smartCubeScrambleProgress < 0 && !smartCubeCorrectionMoves.isEmpty()) {
-            List<String> displayMoves = new ArrayList<>();
-            List<Boolean> correctionFlags = new ArrayList<>();
+            List<SmartCubeDisplayMoveToken> displayMoves = new ArrayList<>();
             for (String move : smartCubeCorrectionMoves) {
-                appendDisplayMove(displayMoves, correctionFlags, move, true);
+                appendDisplayMoveToken(displayMoves, move, move, true, false);
             }
             int resumeProgress = Math.max(0, smartCubeCorrectionBaseProgress);
             if (!TextUtils.isEmpty(smartCubeCorrectionBasePendingMove)) {
-                appendDisplayMove(displayMoves, correctionFlags, smartCubeCorrectionBasePendingMove, false);
+                appendDisplayMoveToken(displayMoves, smartCubeCorrectionBasePendingMove,
+                        getSmartCubeScrambleMoveAt(smartCubeCorrectionBaseProgress, smartCubeCorrectionBasePendingMove),
+                        false, true);
                 resumeProgress++;
             }
             for (int i = resumeProgress; i < smartCubeScrambleMoves.size(); i++) {
-                appendDisplayMove(displayMoves, correctionFlags, smartCubeScrambleMoves.get(i), false);
+                String move = smartCubeScrambleMoves.get(i);
+                appendDisplayMoveToken(displayMoves, move, move, false, false);
             }
             SpannableStringBuilder correctionBuilder = new SpannableStringBuilder();
             boolean highlightedNext = false;
             for (int i = 0; i < displayMoves.size(); i++) {
-                if (i > 0) correctionBuilder.append(' ');
-                int start = correctionBuilder.length();
-                String text = displayMoves.get(i);
-                if (text.length() == 1) text += ' ';
-                correctionBuilder.append(text);
-                int end = correctionBuilder.length();
+                SmartCubeDisplayMoveToken token = displayMoves.get(i);
                 int spanColor = baseColor;
                 boolean isHighlighted = false;
-                if (correctionFlags.get(i)) {
+                if (token.correction) {
                     spanColor = correctionColor;
                 } else if (!highlightedNext) {
                     isHighlighted = true;
-                    if (!TextUtils.isEmpty(smartCubeCorrectionBasePendingMove)
-                            && smartCubeCorrectionBasePendingMove.equals(displayMoves.get(i))) {
+                    if (token.correctionBasePending) {
                         spanColor = pendingColor;
                     } else {
                         spanColor = nextColor;
                     }
                     highlightedNext = true;
                 }
-                correctionBuilder.setSpan(new ForegroundColorSpan(spanColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                if (isHighlighted) {
-                    correctionBuilder.setSpan(new BackgroundColorSpan(highlightBgColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
+                appendSmartCubeMoveToken(correctionBuilder, token.displayText, token.widthReference, spanColor, isHighlighted, highlightBgColor);
             }
             return correctionBuilder;
         }
         SpannableStringBuilder builder = new SpannableStringBuilder();
         if (smartCubeScrambleProgressStyle == 1) {
-            int displayStart = Math.max(0, Math.min(smartCubeScrambleHiddenPrefix, smartCubeScrambleMoves.size()));
+            int displayStart = Math.max(0, Math.min(smartCubeScrambleProgress, smartCubeScrambleMoves.size()));
             for (int i = displayStart; i < smartCubeScrambleMoves.size(); i++) {
-                if (builder.length() > 0) builder.append(' ');
-                int start = builder.length();
                 boolean isPending = (i == smartCubeScrambleProgress
                         && !TextUtils.isEmpty(smartCubeScramblePendingMove));
                 boolean isCurrent = (i == smartCubeScrambleProgress);
-                if (isPending) {
-                    String text = smartCubeScramblePendingMove;
-                    if (text.length() == 1) text += ' ';
-                    builder.append(text);
-                } else {
-                    String text = smartCubeScrambleMoves.get(i);
-                    if (text.length() == 1) text += ' ';
-                    builder.append(text);
-                }
-                int end = builder.length();
+                String displayText = isPending ? smartCubeScramblePendingMove : smartCubeScrambleMoves.get(i);
+                String widthReference = smartCubeScrambleMoves.get(i);
                 int spanColor;
                 if (i < smartCubeScrambleProgress) {
                     spanColor = doneColor;
@@ -1514,29 +1505,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 } else {
                     spanColor = baseColor;
                 }
-                builder.setSpan(new ForegroundColorSpan(spanColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                if (isCurrent) {
-                    builder.setSpan(new BackgroundColorSpan(highlightBgColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
+                appendSmartCubeMoveToken(builder, displayText, widthReference, spanColor, isCurrent, highlightBgColor);
             }
             return builder;
         }
         for (int i = 0; i < smartCubeScrambleMoves.size(); i++) {
-            if (builder.length() > 0) builder.append(' ');
-            int start = builder.length();
             boolean isPending = (i == smartCubeScrambleProgress
                     && !TextUtils.isEmpty(smartCubeScramblePendingMove));
             boolean isCurrent = (i == smartCubeScrambleProgress);
-            if (isPending) {
-                String text = smartCubeScramblePendingMove;
-                if (text.length() == 1) text += ' ';
-                builder.append(text);
-            } else {
-                String text = smartCubeScrambleMoves.get(i);
-                if (text.length() == 1) text += ' ';
-                builder.append(text);
-            }
-            int end = builder.length();
+            String displayText = isPending ? smartCubeScramblePendingMove : smartCubeScrambleMoves.get(i);
+            String widthReference = smartCubeScrambleMoves.get(i);
             int spanColor;
             if (i < smartCubeScrambleProgress) {
                 spanColor = doneColor;
@@ -1547,12 +1525,87 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             } else {
                 spanColor = baseColor;
             }
-            builder.setSpan(new ForegroundColorSpan(spanColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            if (isCurrent) {
-                builder.setSpan(new BackgroundColorSpan(highlightBgColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
+            appendSmartCubeMoveToken(builder, displayText, widthReference, spanColor, isCurrent, highlightBgColor);
         }
         return builder;
+    }
+
+    private void appendSmartCubeMoveToken(SpannableStringBuilder builder, String displayText, String widthReference,
+                                          int textColor, boolean highlighted, int highlightBgColor) {
+        if (TextUtils.isEmpty(displayText)) {
+            return;
+        }
+        if (builder.length() > 0) {
+            builder.append(' ');
+        }
+        int start = builder.length();
+        builder.append(displayText);
+        int end = builder.length();
+        builder.setSpan(new SmartScrambleTokenSpan(displayText,
+                        TextUtils.isEmpty(widthReference) ? displayText : widthReference,
+                        textColor,
+                        highlighted ? highlightBgColor : Color.TRANSPARENT,
+                        APP.getPixel(SMART_CUBE_HIGHLIGHT_HORIZONTAL_PADDING_DP),
+                        APP.getPixel(SMART_CUBE_HIGHLIGHT_VERTICAL_PADDING_DP),
+                        APP.getPixel(SMART_CUBE_HIGHLIGHT_CORNER_RADIUS_DP)),
+                start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    }
+
+    private int getSmartCubeHighlightBgColor() {
+        int percent = clampSmartCubeCurrentMoveHighlightOpacity(APP.smartCubeCurrentMoveHighlightOpacity);
+        int alpha = Math.round(255f * percent / 100f);
+        return Color.argb(alpha, 0x88, 0x88, 0x88);
+    }
+
+    private int clampSmartCubeCurrentMoveHighlightOpacity(int percent) {
+        return Math.max(0, Math.min(100, percent));
+    }
+
+    public String getSmartCubeCurrentMoveHighlightOpacityLabel(int percent) {
+        return clampSmartCubeCurrentMoveHighlightOpacity(percent) + "%";
+    }
+
+    public void previewSmartCubeCurrentMoveHighlightOpacity(int percent) {
+        int normalized = clampSmartCubeCurrentMoveHighlightOpacity(percent);
+        if (APP.smartCubeCurrentMoveHighlightOpacity == normalized) {
+            return;
+        }
+        APP.smartCubeCurrentMoveHighlightOpacity = normalized;
+        updateScrambleTextView();
+    }
+
+    private String getSmartCubeScrambleMoveAt(int index, String fallback) {
+        if (index < 0 || index >= smartCubeScrambleMoves.size()) {
+            return fallback;
+        }
+        return smartCubeScrambleMoves.get(index);
+    }
+
+    private void appendDisplayMoveToken(List<SmartCubeDisplayMoveToken> moves, String move, String widthReference,
+                                        boolean isCorrection, boolean correctionBasePending) {
+        if (TextUtils.isEmpty(move)) {
+            return;
+        }
+        if (moves.isEmpty()) {
+            moves.add(new SmartCubeDisplayMoveToken(move,
+                    TextUtils.isEmpty(widthReference) ? move : widthReference,
+                    isCorrection, correctionBasePending));
+            return;
+        }
+        SmartCubeDisplayMoveToken lastMove = moves.get(moves.size() - 1);
+        if (lastMove.displayText.charAt(0) != move.charAt(0)) {
+            moves.add(new SmartCubeDisplayMoveToken(move,
+                    TextUtils.isEmpty(widthReference) ? move : widthReference,
+                    isCorrection, correctionBasePending));
+            return;
+        }
+        int mergedPower = (getMovePower(lastMove.displayText) + getMovePower(move)) % 4;
+        boolean mergedCorrection = lastMove.correction || isCorrection;
+        moves.remove(moves.size() - 1);
+        if (mergedPower != 0) {
+            String mergedMove = lastMove.displayText.charAt(0) + getMoveSuffix(powerToSuffixIndex(mergedPower));
+            moves.add(new SmartCubeDisplayMoveToken(mergedMove, mergedMove, mergedCorrection, false));
+        }
     }
 
     private void appendSmartCubeDeviationMove(int move) {
@@ -1563,9 +1616,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (smartCubeCorrectionBaseProgress < 0) {
             smartCubeCorrectionBaseProgress = Math.max(0, smartCubeScrambleProgress);
             smartCubeCorrectionBasePendingMove = smartCubeScramblePendingMove;
-            if (smartCubeScrambleProgressStyle == 1) {
-                smartCubeScrambleHiddenPrefix = Math.max(smartCubeScrambleHiddenPrefix, smartCubeCorrectionBaseProgress);
-            }
         }
         appendCombinedMove(smartCubeDeviationMoves, moveText);
         rebuildSmartCubeCorrectionMoves();
@@ -1710,31 +1760,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         moves.remove(moves.size() - 1);
         if (mergedPower != 0) {
             moves.add(lastMove.charAt(0) + getMoveSuffix(powerToSuffixIndex(mergedPower)));
-        }
-    }
-
-    private void appendDisplayMove(List<String> moves, List<Boolean> correctionFlags, String move, boolean isCorrection) {
-        if (TextUtils.isEmpty(move)) {
-            return;
-        }
-        if (moves.isEmpty()) {
-            moves.add(move);
-            correctionFlags.add(isCorrection);
-            return;
-        }
-        String lastMove = moves.get(moves.size() - 1);
-        if (lastMove.charAt(0) != move.charAt(0)) {
-            moves.add(move);
-            correctionFlags.add(isCorrection);
-            return;
-        }
-        int mergedPower = (getMovePower(lastMove) + getMovePower(move)) % 4;
-        boolean mergedCorrection = correctionFlags.get(correctionFlags.size() - 1) || isCorrection;
-        moves.remove(moves.size() - 1);
-        correctionFlags.remove(correctionFlags.size() - 1);
-        if (mergedPower != 0) {
-            moves.add(lastMove.charAt(0) + getMoveSuffix(powerToSuffixIndex(mergedPower)));
-            correctionFlags.add(mergedCorrection);
         }
     }
 
@@ -2957,6 +2982,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         smartCubeScrambleProgressStyle = i;
                         stAdapter.setText(position, getResources().getStringArray(R.array.opt_smart_scramble_progress)[i]);
                         setPref("scadv", i);
+                        updateScrambleTextView();
                         dialogInterface.dismiss();
                     }
                 }).setNegativeButton(R.string.btn_cancel, null).show();
@@ -3911,6 +3937,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     setBackground();
                 setPref("opac", opacity);
                 break;
+            case ST_SMART_CURRENT_MOVE_HIGHLIGHT_OPACITY:
+                APP.smartCubeCurrentMoveHighlightOpacity = clampSmartCubeCurrentMoveHighlightOpacity(progress);
+                setPref("schighlightopacity", APP.smartCubeCurrentMoveHighlightOpacity);
+                updateScrambleTextView();
+                break;
         }
     }
 
@@ -3962,14 +3993,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void addSmartSettingsSection(Map<Integer, String> headers, List<Map<String, Object>> cells) {
         Utils.addSection(headers, cells, getString(R.string.title_smart), getResources().getStringArray(R.array.item_smart),
-                new int[] {0, 0, 0, 0, 1, 1, 1, 0, 0},
+                new int[] {0, 0, 2, 0, 0, 1, 1, 1, 0, 0},
                 new Object[] {getSmartCubeOrientationLabel(smartCubeSolveOrientation), getResources().getStringArray(R.array.opt_smart_scramble_progress)[smartCubeScrambleProgressStyle],
+                        getSmartCubeCurrentMoveHighlightOpacityLabel(APP.smartCubeCurrentMoveHighlightOpacity),
                         getResources().getStringArray(R.array.opt_smart_scramble_deviation)[APP.smartCubeScrambleAutoCompensate ? 0 : 1],
                         getResources().getStringArray(R.array.opt_smart_layout)[smartCubeLayoutMode], APP.smartModeAutoOpenConnectDialog,
                         APP.smartModeTapTimerToConnect, APP.smartModeAutoResetOrientation, "",
                         getSmartCubeLogoSettingLabel()},
-                new int[9],
-                new int[] {ST_SMART_ORIENTATION, ST_SMART_SCRAMBLE_PROGRESS, ST_SMART_SCRAMBLE_DEVIATION, ST_SMART_LAYOUT,
+                new int[] {0, 0, 100 << 16 | APP.smartCubeCurrentMoveHighlightOpacity, 0, 0, 0, 0, 0, 0, 0},
+                new int[] {ST_SMART_ORIENTATION, ST_SMART_SCRAMBLE_PROGRESS, ST_SMART_CURRENT_MOVE_HIGHLIGHT_OPACITY, ST_SMART_SCRAMBLE_DEVIATION, ST_SMART_LAYOUT,
                         ST_SMART_MODE_AUTO_CONNECT, ST_SMART_MODE_TAP_TO_CONNECT, ST_SMART_MODE_AUTO_RESET_ORIENTATION,
                         ST_SMART_MODE_RESET_SOLVED, ST_SMART_MODE_CENTER_LOGO});
     }

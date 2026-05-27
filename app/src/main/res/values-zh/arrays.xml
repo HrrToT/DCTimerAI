@@ -315,6 +315,7 @@
     <array name="item_smart">
         <item>解法字段生成基准</item>
         <item>打乱推进样式</item>
+        <item>当前步高亮透明度</item>
         <item>打乱偏离时</item>
         <item>布局</item>
         <item>自动弹出连接窗口</item>
@@ -347,8 +348,8 @@
     </array>
 
     <array name="opt_smart_scramble_progress">
-        <item>已推进变浅保留</item>
-        <item>已推进自动消失</item>
+        <item>保留已打乱公式</item>
+        <item>隐藏已打乱公式</item>
     </array>
 
     <array name="opt_smart_layout">

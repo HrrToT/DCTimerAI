@@ -103,6 +103,7 @@ public class APP extends Application {
     public static int bleDeviceType;
     public static int smartCubeSolveOrientation;
     public static int smartCubeScrambleProgressStyle;
+    public static int smartCubeCurrentMoveHighlightOpacity;
     public static int smartCubeLayoutMode;
     public static int smartCubeLogoMode;
     public static String smartCubeLogoBuiltinId;
@@ -253,6 +254,10 @@ public class APP extends Application {
         if (smartCubeSolveOrientation < 0 || smartCubeSolveOrientation >= 24) smartCubeSolveOrientation = 0;
         smartCubeScrambleProgressStyle = sp.getInt("scadv", 0);
         if (smartCubeScrambleProgressStyle < 0 || smartCubeScrambleProgressStyle > 1) smartCubeScrambleProgressStyle = 0;
+        smartCubeCurrentMoveHighlightOpacity = sp.getInt("schighlightopacity", 50);
+        if (smartCubeCurrentMoveHighlightOpacity < 0 || smartCubeCurrentMoveHighlightOpacity > 100) {
+            smartCubeCurrentMoveHighlightOpacity = 50;
+        }
         smartCubeLayoutMode = sp.getInt("sclayout", 0);
         if (smartCubeLayoutMode < 0 || smartCubeLayoutMode > 1) smartCubeLayoutMode = 0;
         smartCubeLogoMode = sp.getInt("smartcubelogomode", SmartCubeLogoProvider.MODE_NONE);
@@ -286,6 +291,7 @@ public class APP extends Application {
         smartModeTapTimerToConnect = true;
         smartModeAutoResetOrientation = true;
         smartCubeScrambleAutoCompensate = true;
+        smartCubeCurrentMoveHighlightOpacity = 50;
         colors[0] = 0xffffffff;	colors[1] = 0xff000000;	colors[2] = 0xffff00ff;
         colors[3] = 0xffee3333;	colors[4] = 0xff009900; colors[5] = 0xffffffff;
         colors[6] = 0xff000000;

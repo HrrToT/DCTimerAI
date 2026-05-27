@@ -370,6 +370,7 @@
     <array name="item_smart">
         <item>Generated solution orientation</item>
         <item>Scramble progress style</item>
+        <item>Current move highlight opacity</item>
         <item>When deviation occurs</item>
         <item>Layout</item>
         <item>Auto open connection dialog</item>
@@ -402,7 +403,7 @@
     </array>
 
     <array name="opt_smart_scramble_progress">
-        <item>Completed moves fade but stay visible</item>
+        <item>Keep completed moves</item>
         <item>Hide completed moves</item>
     </array>
 
